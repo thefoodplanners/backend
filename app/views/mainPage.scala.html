@@ -1,0 +1,20 @@
+@(username: String, password: String)
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Main Page</title>
+  <script src='@routes.Assets.versioned("javascripts/mainPage.js")' type="text/javascript"></script>
+</head>
+<body>
+  <p>username: @username</p>
+  <p>password: @password</p>
+
+  <label for="calorie1">Calorie 1:</label><br>
+  <input type="number" id="calorie1" name="calorie 1"/><br>
+  <label for="calorie2">Calorie 2:</label><br>
+  <input type="number" id="calorie2" name="calorie 2"/><br><br>
+  <button onclick="getTotalCalories()">Get Total Calories</button><br>
+  <p id="total"></p>
+</body>
+</html>
