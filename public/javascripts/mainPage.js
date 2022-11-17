@@ -9,7 +9,7 @@ function getTotalCalories() {
 function getRecipes() {
     fetch('http://localhost:9000/recipes')
     .then(response => response.json())
-    .then(data => displayTotalCalories(data))
+    .then(data => displayAllRecipes(data))
 }
 
 function displayTotalCalories(total) {

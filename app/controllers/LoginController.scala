@@ -25,9 +25,13 @@ class LoginController @Inject() (loginDao: LoginDao, cc: ControllerComponents)
     )(LoginData.apply)(LoginData.unapply)
   )
 
-  def index(): Action[AnyContent] = Action { implicit request =>
+  def index: Action[AnyContent] = Action { implicit request =>
     request.session
-    Ok(views.html.index(loginForm, false))
+    Ok(views.html.index())
+  }
+
+  def showLoginForm: Action[AnyContent] = Action { implicit request =>
+    Ok(views.html.loginPage(loginForm))
   }
 
   /**
@@ -36,21 +40,24 @@ class LoginController @Inject() (loginDao: LoginDao, cc: ControllerComponents)
    * will be called when the application receives a `GET` request with
    * a path of `/`.
    */
-  def login(): Action[AnyContent] = Action.async { implicit request =>
+  def processLogin: Action[AnyContent] = Action.async { implicit request =>
     loginForm.bindFromRequest().fold(
-      formWithErrors => Future.successful(BadRequest(views.html.index(formWithErrors, false))),
+      formWithErrors => Future.successful(BadRequest(views.html.loginPage(formWithErrors))),
       loginData => {
         val user = LoginData(loginData.username, loginData.password)
         loginDao.checkLoginDetails(user).map { isAuthorised =>
-          if (isAuthorised) Redirect(routes.LoginController.home(user.username, user.password))
-          else Unauthorized(views.html.index(loginForm.fill(loginData), true))
+          if (isAuthorised)
+            Redirect(routes.LoginController.home)
+              .flashing("info" -> "You are now logged in.")
+              .withSession(SESSION_USERNAME_KEY -> loginData.username)
+          else Unauthorized(views.html.loginPage(loginForm.fill(loginData)))
         }
       }
     )
   }
 
-  def home(username: String, password: String): Action[AnyContent] = Action {
-    Ok(views.html.mainPage(username, password))
+  def home: Action[AnyContent] = Action { implicit request =>
+    Ok(views.html.mainPage(routes.LogoutController.logout))
   }
 
 }

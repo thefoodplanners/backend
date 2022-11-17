@@ -8,8 +8,8 @@ import javax.inject._
 import scala.concurrent.ExecutionContext
 
 /**
- * This controller creates an `Action` to handle HTTP requests to the
- * application's home page.
+ * This controller handles HTTP requests dealing
+ * with recipes.
  */
 @Singleton
 class RecipeController @Inject()(cc: ControllerComponents, database: LoginDao)

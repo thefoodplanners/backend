@@ -1,0 +1,17 @@
+@(loginForm: Form[LoginData])(implicit request: RequestHeader, messagesProvider: MessagesProvider)
+
+@import helper._
+
+<!DOCTYPE html>
+<html>
+<head></head>
+<body>
+<h2>Please Login:</h2>
+@helper.form(action = routes.LoginController.processLogin) {
+  @helper.CSRF.formField
+  @helper.inputText(loginForm("username"))
+  @helper.inputPassword(loginForm("password"))
+  <input type="submit" value="Login">
+}
+</body>
+</html>

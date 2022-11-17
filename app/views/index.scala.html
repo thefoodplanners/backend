@@ -1,19 +1,11 @@
-@(loginForm: Form[LoginData], hasAttempted: Boolean)(implicit messages: Messages)
+@()
 
 <!DOCTYPE html>
 <html>
 <head></head>
 <body>
-<h2>Please Login:</h2>
-@helper.form(action = routes.LoginController.login()) {
-<label for="fname">Username:</label><br>
-<input type="text" id="fname" name="username"/><br>
-<label for="lname">Password:</label><br>
-<input type="password" id="lname" name="password"/><br><br>
-<input type="submit" value="Login">
-}
-@if(hasAttempted) {
-  <p style="color:red;">The username/password is incorrect</p>
-}
+<h2>Welcome!</h2>
+<button onclick="routes.Login">bruh</button>
+
 </body>
 </html>
