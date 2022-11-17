@@ -7,6 +7,7 @@ GET     /                           controllers.LoginController.index()
 GET     /login                      controllers.LoginController.login()
 GET     /home                       controllers.LoginController.home(username, password)
 GET     /list-of-calories           controllers.api.CalorieController.getTotalCalories(calories: List[Int])
+GET     /recipes                    controllers.api.RecipeController.getAllRecipes
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(file)

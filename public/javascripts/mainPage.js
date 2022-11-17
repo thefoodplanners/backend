@@ -6,7 +6,18 @@ function getTotalCalories() {
     .then(data => displayTotalCalories(data))
 }
 
+function getRecipes() {
+    fetch('http://localhost:9000/recipes')
+    .then(response => response.json())
+    .then(data => displayTotalCalories(data))
+}
+
 function displayTotalCalories(total) {
     var totalCalories = document.getElementById("total");
     totalCalories.innerHTML = "Total amount of calories: " + total;
+}
+
+function displayAllRecipes(recipes) {
+    var allRecipes = document.getElementById("recipes");
+    allRecipes.innerHTML = recipes;
 }

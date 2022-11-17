@@ -7,8 +7,6 @@
   <script src='@routes.Assets.versioned("javascripts/mainPage.js")' type="text/javascript"></script>
 </head>
 <body>
-  <p>username: @username</p>
-  <p>password: @password</p>
 
   <label for="calorie1">Calorie 1:</label><br>
   <input type="number" id="calorie1" name="calorie 1"/><br>
@@ -16,5 +14,9 @@
   <input type="number" id="calorie2" name="calorie 2"/><br><br>
   <button onclick="getTotalCalories()">Get Total Calories</button><br>
   <p id="total"></p>
+  <br/>
+  <br/>
+  <button onclick="getRecipes()">Get all recipes</button>
+  <p id="recipes"></p>
 </body>
 </html>
