@@ -4,15 +4,14 @@ import controllers.customActions.AuthenticatedUserAction
 import models.{ LoginDao, LoginData, SESSION_USERNAME_KEY }
 import play.api.data.Forms._
 import play.api.data._
-import play.api.libs.json.{ JsResult, JsValue, Json }
+import play.api.libs.json.Json
 import play.api.mvc._
 
 import javax.inject._
 import scala.concurrent.{ ExecutionContext, Future }
 
 /**
- * This controller creates an `Action` to handle HTTP requests to the
- * application's home page.
+ * This controller handles Actions related to logging in.
  */
 @Singleton
 class LoginController @Inject() (
@@ -21,8 +20,7 @@ class LoginController @Inject() (
     authenticatedUserAction: AuthenticatedUserAction
   )
   (implicit ec: ExecutionContext)
-  extends AbstractController(cc)
-  with play.api.i18n.I18nSupport {
+  extends AbstractController(cc) {
 
   val loginForm: Form[LoginData] = Form(
     mapping (
@@ -31,20 +29,10 @@ class LoginController @Inject() (
     )(LoginData.apply)(LoginData.unapply)
   )
 
-  def index: Action[AnyContent] = Action { implicit request =>
-    request.session
-    Ok(views.html.index())
-  }
-
-  def showLoginForm: Action[AnyContent] = Action { implicit request =>
-    Ok(views.html.loginPage(loginForm))
-  }
-
   /**
-   * Create an Action to render an HTML page with a welcome message.
-   * The configuration in the `routes` file means that this method
-   * will be called when the application receives a `GET` request with
-   * a path of `/`.
+   * Takes the username and password from the front-end and checks whether
+   * it is the same as in the database.
+   * @return Http response on the status of the login process.
    */
   def processLogin: Action[AnyContent] = Action.async { request =>
     request.body.asJson.map { json =>
@@ -62,12 +50,12 @@ class LoginController @Inject() (
           Future.successful(BadRequest("Error in login form."))
         }
     }.getOrElse {
-      Future.successful(BadRequest("Error in sent JSON."))
+      Future.successful(BadRequest("Expecting Json data."))
     }
   }
 
-  def home: Action[AnyContent] =  Action { implicit request =>
-    Ok(views.html.mainPage(routes.LogoutController.logout))
+  def test: Action[AnyContent] = Action {
+    Ok(Json.obj("test" -> "ing"))
   }
 
 }

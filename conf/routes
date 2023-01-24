@@ -3,10 +3,9 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET     /                           controllers.LoginController.showLoginForm
+GET     /test                       controllers.LoginController.test
 POST    /login                      controllers.LoginController.processLogin
 GET     /logout                     controllers.LogoutController.logout
-GET     /home                       controllers.LoginController.home
 GET     /list-of-calories           controllers.api.CalorieController.getTotalCalories(calories: List[Int])
 GET     /recipes                    controllers.api.RecipeController.getAllRecipes
 

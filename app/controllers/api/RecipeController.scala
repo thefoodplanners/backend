@@ -1,7 +1,7 @@
 package controllers.api
 
 import models.{ Recipe, RecipeDao }
-import play.api.libs.json.{ JsResult, JsValue, Json }
+import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
 
 import javax.inject._
@@ -28,4 +28,5 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
     val recipe: Option[Recipe] = jsonObj.flatMap(Json.fromJson[Recipe](_).asOpt)
     ???
   }
+
 }

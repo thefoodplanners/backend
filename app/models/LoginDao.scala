@@ -21,9 +21,9 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
 
         val firstRow: Option[LoginData] =
           SQL"""
-               SELECT * FROM login_details
-               WHERE username=${loginDetails.username}
-               AND password=${loginDetails.password};
+               SELECT * FROM users;
+               /*WHERE username=${loginDetails.username}
+               AND password=${loginDetails.password}*/
                """
             .as(loginDataParser.singleOpt)
 
