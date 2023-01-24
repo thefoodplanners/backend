@@ -1,7 +1,7 @@
 package controllers.api
 
-import models.LoginDao
-import play.api.libs.json.Json
+import models.{ Recipe, RecipeDao }
+import play.api.libs.json.{ JsResult, JsValue, Json }
 import play.api.mvc._
 
 import javax.inject._
@@ -12,7 +12,7 @@ import scala.concurrent.ExecutionContext
  * with recipes.
  */
 @Singleton
-class RecipeController @Inject()(cc: ControllerComponents, database: LoginDao)
+class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
@@ -21,5 +21,11 @@ class RecipeController @Inject()(cc: ControllerComponents, database: LoginDao)
       Json.stringify(Json.obj("recipes" -> recipes))
     }
     recipesJsonString.map(Ok(_))
+  }
+
+  def addRecipe: Action[AnyContent] = Action.async { request =>
+    val jsonObj: Option[JsValue] = request.body.asJson
+    val recipe: Option[Recipe] = jsonObj.flatMap(Json.fromJson[Recipe](_).asOpt)
+    ???
   }
 }

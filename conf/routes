@@ -4,7 +4,7 @@
 
 # An example controller showing a sample home page
 GET     /                           controllers.LoginController.showLoginForm
-GET     /login                      controllers.LoginController.processLogin
+POST    /login                      controllers.LoginController.processLogin
 GET     /logout                     controllers.LogoutController.logout
 GET     /home                       controllers.LoginController.home
 GET     /list-of-calories           controllers.api.CalorieController.getTotalCalories(calories: List[Int])

@@ -1,19 +1,25 @@
 package controllers
 
-import models.{LoginDao, LoginData, SESSION_USERNAME_KEY}
+import controllers.customActions.AuthenticatedUserAction
+import models.{ LoginDao, LoginData, SESSION_USERNAME_KEY }
 import play.api.data.Forms._
 import play.api.data._
+import play.api.libs.json.{ JsResult, JsValue, Json }
 import play.api.mvc._
 
 import javax.inject._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
  * application's home page.
  */
 @Singleton
-class LoginController @Inject() (loginDao: LoginDao, cc: ControllerComponents)
+class LoginController @Inject() (
+    cc: ControllerComponents,
+    loginDao: LoginDao,
+    authenticatedUserAction: AuthenticatedUserAction
+  )
   (implicit ec: ExecutionContext)
   extends AbstractController(cc)
   with play.api.i18n.I18nSupport {
@@ -40,23 +46,27 @@ class LoginController @Inject() (loginDao: LoginDao, cc: ControllerComponents)
    * will be called when the application receives a `GET` request with
    * a path of `/`.
    */
-  def processLogin: Action[AnyContent] = Action.async { implicit request =>
-    loginForm.bindFromRequest().fold(
-      formWithErrors => Future.successful(BadRequest(views.html.loginPage(formWithErrors))),
-      loginData => {
-        val user = LoginData(loginData.username, loginData.password)
-        loginDao.checkLoginDetails(user).map { isAuthorised =>
-          if (isAuthorised)
-            Redirect(routes.LoginController.home)
-              .flashing("info" -> "You are now logged in.")
-              .withSession(SESSION_USERNAME_KEY -> loginData.username)
-          else Unauthorized(views.html.loginPage(loginForm.fill(loginData)))
+  def processLogin: Action[AnyContent] = Action.async { request =>
+    request.body.asJson.map { json =>
+      Json.fromJson[LoginData](json)
+        .asOpt
+        .map(loginDao.checkLoginDetails)
+        .map(_.map { isAuthorised =>
+          if (isAuthorised) {
+            Ok("Login successful.")
+              .withSession(SESSION_USERNAME_KEY -> (json \ "username").asOpt[String].get)
+          }
+          else Unauthorized("Username and/or password is incorrect.")
+        })
+        .getOrElse {
+          Future.successful(BadRequest("Error in login form."))
         }
-      }
-    )
+    }.getOrElse {
+      Future.successful(BadRequest("Error in sent JSON."))
+    }
   }
 
-  def home: Action[AnyContent] = Action { implicit request =>
+  def home: Action[AnyContent] =  Action { implicit request =>
     Ok(views.html.mainPage(routes.LogoutController.logout))
   }
 
