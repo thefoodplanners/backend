@@ -9,11 +9,13 @@ import scala.language.postfixOps
 
 class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
   def checkLoginDetails(loginDetails: LoginData): Future[Boolean] = {
+    val newLoginDetails = loginDetails.copy(username = loginDetails.username.split("@").head)
+
     Future {
       db.withConnection { implicit conn =>
         val loginDataParser: RowParser[LoginData] = (
-          SqlParser.str("username") ~
-            SqlParser.str("password")
+          SqlParser.str("Username") ~
+            SqlParser.str("Password")
           ) map {
           case username ~ password =>
             LoginData(username, password)
@@ -21,13 +23,13 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
 
         val firstRow: Option[LoginData] =
           SQL"""
-               SELECT * FROM users;
-               /*WHERE username=${loginDetails.username}
-               AND password=${loginDetails.password}*/
+               SELECT * FROM Users
+               WHERE Username=${newLoginDetails.username}
+               AND Password=${newLoginDetails.password};
                """
             .as(loginDataParser.singleOpt)
 
-        firstRow.contains(loginDetails)
+        firstRow.contains(newLoginDetails)
       }
     }(databaseExecutionContext)
   }

@@ -4,7 +4,7 @@ import controllers.customActions.AuthenticatedUserAction
 import models.{ LoginDao, LoginData, SESSION_USERNAME_KEY }
 import play.api.data.Forms._
 import play.api.data._
-import play.api.libs.json.Json
+import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
 
 import javax.inject._
@@ -34,24 +34,20 @@ class LoginController @Inject() (
    * it is the same as in the database.
    * @return Http response on the status of the login process.
    */
-  def processLogin: Action[AnyContent] = Action.async { request =>
-    request.body.asJson.map { json =>
-      Json.fromJson[LoginData](json)
-        .asOpt
-        .map(loginDao.checkLoginDetails)
-        .map(_.map { isAuthorised =>
-          if (isAuthorised) {
-            Ok("Login successful.")
-              .withSession(SESSION_USERNAME_KEY -> (json \ "username").asOpt[String].get)
-          }
-          else Unauthorized("Username and/or password is incorrect.")
-        })
-        .getOrElse {
-          Future.successful(BadRequest("Error in login form."))
+  def processLogin: Action[JsValue] = Action.async(parse.json) { request =>
+    Json.fromJson[LoginData](request.body)
+      .asOpt
+      .map(loginDao.checkLoginDetails)
+      .map(_.map { isAuthorised =>
+        if (isAuthorised) {
+          Ok("Login successful.")
+            .withSession(SESSION_USERNAME_KEY -> (request.body \ "username").asOpt[String].get)
         }
-    }.getOrElse {
-      Future.successful(BadRequest("Expecting Json data."))
-    }
+        else Unauthorized("Username and/or password is incorrect.")
+      })
+      .getOrElse {
+        Future.successful(BadRequest("Error in login form."))
+      }
   }
 
   def test: Action[AnyContent] = Action {
