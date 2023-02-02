@@ -8,8 +8,10 @@ lazy val root = (project in file("."))
       jdbc,
       guice,
       "org.playframework.anorm" %% "anorm" % "2.7.0",
-      "mysql" % "mysql-connector-java" % "8.0.30",
-      "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
+      "mysql" % "mysql-connector-java" % "8.0.32",
+      "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
+      "org.scalatestplus" %% "mockito-4-6" % "3.2.15.0" % Test,
+      "com.github.nscala-time" %% "nscala-time" % "2.32.0"
     ),
     scalacOptions ++= Seq(
       "-feature",

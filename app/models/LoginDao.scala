@@ -8,28 +8,23 @@ import scala.concurrent.Future
 import scala.language.postfixOps
 
 class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
-  def checkLoginDetails(loginDetails: LoginData): Future[Boolean] = {
+  def checkLoginDetails(loginDetails: LoginData): Future[(Boolean, Int)] = {
     val newLoginDetails = loginDetails.copy(username = loginDetails.username.split("@").head)
 
     Future {
       db.withConnection { implicit conn =>
-        val loginDataParser: RowParser[LoginData] = (
-          SqlParser.str("Username") ~
-            SqlParser.str("Password")
-          ) map {
-          case username ~ password =>
-            LoginData(username, password)
-        }
-
-        val firstRow: Option[LoginData] =
+        val firstRow: Option[Int] =
           SQL"""
-               SELECT * FROM Users
+               SELECT UserID FROM Users
                WHERE Username=${newLoginDetails.username}
                AND Password=${newLoginDetails.password};
                """
-            .as(loginDataParser.singleOpt)
+            .as(SqlParser.scalar[Int].singleOpt)
 
-        firstRow.contains(newLoginDetails)
+        val isAuthorised = firstRow.nonEmpty
+        val userId = firstRow.getOrElse(0)
+
+        (isAuthorised, userId)
       }
     }(databaseExecutionContext)
   }

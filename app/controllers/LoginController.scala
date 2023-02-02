@@ -1,7 +1,7 @@
 package controllers
 
 import controllers.customActions.AuthenticatedUserAction
-import models.{ LoginDao, LoginData, SESSION_USERNAME_KEY }
+import models.{ LoginDao, LoginData, SESSION_KEY }
 import play.api.data.Forms._
 import play.api.data._
 import play.api.libs.json.{ JsValue, Json }
@@ -38,16 +38,20 @@ class LoginController @Inject() (
     Json.fromJson[LoginData](request.body)
       .asOpt
       .map(loginDao.checkLoginDetails)
-      .map(_.map { isAuthorised =>
+      .map(_.map { case (isAuthorised, userId) =>
         if (isAuthorised) {
           Ok("Login successful.")
-            .withSession(SESSION_USERNAME_KEY -> (request.body \ "username").asOpt[String].get)
+            .withSession(SESSION_KEY -> userId.toString)
         }
         else Unauthorized("Username and/or password is incorrect.")
       })
       .getOrElse {
         Future.successful(BadRequest("Error in login form."))
       }
+  }
+  
+  def logout: Action[AnyContent] = Action {
+    Ok("Successfully logged out.").withNewSession
   }
 
   def test: Action[AnyContent] = Action {

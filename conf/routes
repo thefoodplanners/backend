@@ -7,7 +7,9 @@ GET     /test                       controllers.LoginController.test
 POST    /login                      controllers.LoginController.processLogin
 GET     /logout                     controllers.LogoutController.logout
 GET     /list-of-calories           controllers.api.CalorieController.getTotalCalories(calories: List[Int])
+GET     /recipe                     controllers.api.RecipeController.getRecipeFromId(userId: Int)
 GET     /recipes                    controllers.api.RecipeController.getAllRecipes
+GET     /allMeals                   controllers.api.RecipeController.getAllMealSlots(weekDate: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(file)

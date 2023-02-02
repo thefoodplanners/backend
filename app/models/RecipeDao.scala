@@ -1,6 +1,7 @@
 package models
 
 import anorm._
+import org.joda.time.LocalDate
 import play.api.db.Database
 
 import javax.inject.Inject
@@ -38,23 +39,85 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
       Recipe(id, name, mealType, desc, time, diff, ingr, instr, cal, fats, proteins, carbs, preferences)
   }
 
+  private val mealSlotParser = (
+    SqlParser.date("Date") ~
+      SqlParser.int("Meal_Number") ~
+      SqlParser.int("RecipeID")
+    ) map {
+    case date ~ mealNum ~ recipeId =>
+      FetchedMealSlot(date, mealNum, recipeId)
+  }
+
+  def fetchRecipe(recipeId: Int): Future[Recipe] = {
+    Future {
+      db.withConnection { implicit conn =>
+        val allRows =
+          SQL"""SELECT * FROM recipe
+               WHERE RecipeID = $recipeId;""".as(recipeParser.single)
+        allRows
+      }
+    }(databaseExecutionContext)
+  }
+
   def fetchAllRecipes: Future[List[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
         val allRows = SQL"""SELECT * FROM recipe;""".as(recipeParser.*)
         allRows
       }
-    } (databaseExecutionContext)
+    }(databaseExecutionContext)
   }
 
   def addRecipe(recipe: Recipe): Future[Option[Long]] = {
     Future {
       db.withConnection { implicit conn =>
-
-        val allRows = SQL"""SELECT * FROM recipe;""".executeInsert()
+        val allRows =
+          SQL"""INSERT INTO Recipe(Name, Type, Description, Time, Difficulty,
+               Ingredients, Calories, Fats, Proteins, Carbohydrates, UserID,
+               Vegan, Vegetarian, Keto, Lactose, Halal, Kosher, Dairy_free,
+               Low_carbs, Gluten_free)
+               VALUES (${recipe.name}, ${recipe.mealType}, ${recipe.desc}, ${recipe.time},
+               ${recipe.difficulty}, ${recipe.ingredients}, ${recipe.calories}, ${recipe.fats},
+               ${recipe.proteins}, ${recipe.carbohydrates}, ${recipe.preferences.isVegan});
+             """.executeInsert()
         allRows
       }
-    } (databaseExecutionContext)
+    }(databaseExecutionContext)
+  }
+
+  def addMealToSlot(slot: ReceivedMealSlot): Future[Option[Long]] = {
+    Future {
+      db.withConnection { implicit conn =>
+        val newRow =
+          SQL"""INSERT INTO Meal_Slot(Date, Type, RecipeID, UserID)
+               VALUES (${slot.date}, ${slot.mealType}, ${slot.recipeId}, ${slot.userId});
+             """.executeInsert()
+        newRow
+      }
+    }(databaseExecutionContext)
+  }
+
+  def fetchAllMealSlots(userId: Int, weekDateString: String): Future[(List[FetchedMealSlot], Int)] = {
+    Future {
+      db.withConnection { implicit conn =>
+        val weekDate: LocalDate = LocalDate.parse(weekDateString)
+
+        val numOfRows: Int =
+          SQL"""SELECT Num_of_rows
+               FROM Weekly_Meals
+               WHERE UserID = $userId
+               AND Week = ${weekDate.toString};
+             """.as(SqlParser.scalar[Int].single)
+
+        val allRows: List[FetchedMealSlot] =
+          SQL"""SELECT Date, Meal_Number, RecipeID
+               FROM Meal_Slot
+               WHERE UserID = $userId
+               AND Date BETWEEN ${weekDate.toString} AND ${weekDate.withDayOfWeek(7).toString};
+               """.as(mealSlotParser.*)
+        (allRows, numOfRows)
+      }
+    }(databaseExecutionContext)
   }
 
   /*
