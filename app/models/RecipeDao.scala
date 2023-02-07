@@ -11,18 +11,17 @@ import scala.language.postfixOps
 class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
 
   private val recipeParser = (
-    SqlParser.int("id") ~
+    SqlParser.int("recipeId") ~
       SqlParser.str("name") ~
       SqlParser.str("type") ~
       SqlParser.str("description") ~
       SqlParser.int("time") ~
       SqlParser.str("difficulty") ~
       SqlParser.str("ingredients") ~
-      SqlParser.str("instructions") ~
       SqlParser.int("calories") ~
-      SqlParser.int("fats") ~
-      SqlParser.int("proteins") ~
-      SqlParser.int("carbohydrates") ~
+      SqlParser.float("fats") ~
+      SqlParser.float("proteins") ~
+      SqlParser.float("carbohydrates") ~
       SqlParser.bool("vegan") ~
       SqlParser.bool("vegetarian") ~
       SqlParser.bool("keto") ~
@@ -32,20 +31,20 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
       SqlParser.bool("dairy_free") ~
       SqlParser.bool("low_carbs")
     ) map {
-    case id ~ name ~ mealType ~ desc ~ time ~ diff ~ ingr ~ instr ~ cal ~ fats ~ proteins ~
+    case id ~ name ~ mealType ~ desc ~ time ~ diff ~ ingr ~ cal ~ fats ~ proteins ~
       carbs ~ isVegan ~ isVegetarian ~ isKeto ~ isLactose ~ isHalal ~ isKosher ~
       isDairyFree ~ isLowCarbs =>
       val preferences = Preferences(isVegan, isVegetarian, isKeto, isLactose, isHalal, isKosher, isDairyFree, isLowCarbs)
-      Recipe(id, name, mealType, desc, time, diff, ingr, instr, cal, fats, proteins, carbs, preferences)
+      Recipe(id, name, mealType, desc, time, diff, ingr, cal, fats, proteins, carbs, preferences)
   }
 
   private val mealSlotParser = (
     SqlParser.date("Date") ~
       SqlParser.int("Meal_Number") ~
-      SqlParser.int("RecipeID")
+      recipeParser
     ) map {
-    case date ~ mealNum ~ recipeId =>
-      FetchedMealSlot(date, mealNum, recipeId)
+    case date ~ mealNum ~ recipe =>
+      FetchedMealSlot(date, mealNum, recipe)
   }
 
   def fetchRecipe(recipeId: Int): Future[Recipe] = {
@@ -97,25 +96,20 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
     }(databaseExecutionContext)
   }
 
-  def fetchAllMealSlots(userId: Int, weekDateString: String): Future[(List[FetchedMealSlot], Int)] = {
+  def fetchAllMealSlots(userId: Int, weekDateString: String): Future[List[FetchedMealSlot]] = {
     Future {
       db.withConnection { implicit conn =>
         val weekDate: LocalDate = LocalDate.parse(weekDateString)
 
-        val numOfRows: Int =
-          SQL"""SELECT Num_of_rows
-               FROM Weekly_Meals
-               WHERE UserID = $userId
-               AND Week = ${weekDate.toString};
-             """.as(SqlParser.scalar[Int].single)
-
-        val allRows: List[FetchedMealSlot] =
-          SQL"""SELECT Date, Meal_Number, RecipeID
-               FROM Meal_Slot
-               WHERE UserID = $userId
+        val allRows: List[FetchedMealSlot] = {
+          SQL"""SELECT *
+               FROM Meal_Slot ms
+               INNER JOIN Recipe r ON ms.RecipeId = r.RecipeId
+               WHERE ms.UserID = $userId
                AND Date BETWEEN ${weekDate.toString} AND ${weekDate.withDayOfWeek(7).toString};
                """.as(mealSlotParser.*)
-        (allRows, numOfRows)
+        }
+        allRows
       }
     }(databaseExecutionContext)
   }

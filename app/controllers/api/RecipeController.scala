@@ -29,7 +29,7 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
     ???
   }
 
-  def getRecipeFromId(recipeId: Int) = Action.async {
+  def getRecipeFromId(recipeId: Int): Action[AnyContent] = Action.async {
     val recipeJsonString = database.fetchRecipe(recipeId).map { recipe =>
       Json.stringify(Json.obj("recipe" -> recipe))
     }
@@ -46,8 +46,8 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        val mealSlotsJsonString = database.fetchAllMealSlots(userId.toInt, weekDateString).map { case (mealSlots, numOfRows) =>
-          val mealSlotsArray = mealSlotToArray(mealSlots, numOfRows)
+        val mealSlotsJsonString = database.fetchAllMealSlots(userId.toInt, weekDateString).map { mealSlots =>
+          val mealSlotsArray = mealSlotToArray(mealSlots)
           Json.stringify(Json.toJson(mealSlotsArray))
         }
         mealSlotsJsonString.map(Ok(_))
@@ -62,21 +62,16 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
    * of the week being the column size and the number of meal numbers being the row size.
    *
    * @param mealSlots List of FetchedMealSlot case class objects.
-   * @param numOfRows The number of meal numbers.
-   * @return A 2D array of mealSlots.
+   * @return A 2D array of mealSlots, with either empty items or a recipe object.
    */
-  private def mealSlotToArray(mealSlots: List[FetchedMealSlot], numOfRows: Int): Seq[Seq[String]] = {
-    val mealSlotMap = mealSlots.map { fetchedMealSlot =>
-      val dayOfWeekNum = LocalDate.fromDateFields(fetchedMealSlot.date).getDayOfWeek
-      (fetchedMealSlot.mealNum - 1, dayOfWeekNum - 1) -> fetchedMealSlot.recipeId
-    }.toMap
-
-    val mealSlotArray = Seq.tabulate(numOfRows, 7) { case (row, col) =>
-      val recipeIdOpt = mealSlotMap.get((row, col)).map(_.toString)
-      recipeIdOpt.getOrElse("")
-    }
-
-    mealSlotArray
+  private def mealSlotToArray(mealSlots: Seq[FetchedMealSlot]): Seq[Seq[Recipe]] = {
+    mealSlots
+      .groupBy { fetchedMealSlot =>
+        val dayOfWeekNum = LocalDate.fromDateFields(fetchedMealSlot.date).getDayOfWeek
+        dayOfWeekNum - 1
+      }
+      .toSeq
+      .map(_._2.map(_.recipe))
   }
 
 }

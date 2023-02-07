@@ -7,8 +7,8 @@ package object models {
 
   case class Recipe(
     id: Int, name: String, mealType: String, desc: String, time: Int,
-    difficulty: String, ingredients: String, instructions: String,
-    calories: Int, fats: Int, proteins: Int, carbohydrates: Int,
+    difficulty: String, ingredients: String,
+    calories: Int, fats: Float, proteins: Float, carbohydrates: Float,
     preferences: Preferences
   )
 
@@ -34,7 +34,7 @@ package object models {
 
   case class ReceivedMealSlot(date: Date, mealType: String, recipeId: Int, userId: String)
 
-  case class FetchedMealSlot(date: Date, mealNum: Int, recipeId: Int)
+  case class FetchedMealSlot(date: Date, mealNum: Int, recipe: Recipe)
 
   object FetchedMealSlot {
     implicit val formats: OFormat[FetchedMealSlot] = Json.format[FetchedMealSlot]
