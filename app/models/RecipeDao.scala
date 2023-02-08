@@ -58,7 +58,7 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
     }(databaseExecutionContext)
   }
 
-  def fetchAllRecipes: Future[List[Recipe]] = {
+  def fetchAllRecipes: Future[Seq[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
         val allRows = SQL"""SELECT * FROM recipe;""".as(recipeParser.*)
@@ -96,12 +96,12 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
     }(databaseExecutionContext)
   }
 
-  def fetchAllMealSlots(userId: Int, weekDateString: String): Future[List[FetchedMealSlot]] = {
+  def fetchAllMealSlots(userId: Int, weekDateString: String): Future[Seq[FetchedMealSlot]] = {
     Future {
       db.withConnection { implicit conn =>
         val weekDate: LocalDate = LocalDate.parse(weekDateString)
 
-        val allRows: List[FetchedMealSlot] = {
+        val allRows: Seq[FetchedMealSlot] = {
           SQL"""SELECT *
                FROM Meal_Slot ms
                INNER JOIN Recipe r ON ms.RecipeId = r.RecipeId

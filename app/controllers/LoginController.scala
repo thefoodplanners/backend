@@ -22,13 +22,6 @@ class LoginController @Inject() (
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
-  val loginForm: Form[LoginData] = Form(
-    mapping (
-      "username" -> nonEmptyText,
-      "password" -> nonEmptyText
-    )(LoginData.apply)(LoginData.unapply)
-  )
-
   /**
    * Takes the username and password from the front-end and checks whether
    * it is the same as in the database.

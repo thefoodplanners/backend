@@ -65,13 +65,18 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
    * @return A 2D array of mealSlots, with either empty items or a recipe object.
    */
   private def mealSlotToArray(mealSlots: Seq[FetchedMealSlot]): Seq[Seq[Recipe]] = {
-    mealSlots
+    val daySlots = mealSlots
       .groupBy { fetchedMealSlot =>
         val dayOfWeekNum = LocalDate.fromDateFields(fetchedMealSlot.date).getDayOfWeek
         dayOfWeekNum - 1
       }
-      .toSeq
-      .map(_._2.map(_.recipe))
+
+    Seq.tabulate(7) { index =>
+     daySlots
+       .get(index)
+       .map(_.map(_.recipe))
+       .getOrElse(Seq.empty)
+    }
   }
 
 }

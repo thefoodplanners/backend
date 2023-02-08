@@ -1,0 +1,50 @@
+[
+  [
+    {
+      "id": 1,
+      "name": "name1",
+      "mealType": "mealType1",
+      "desc": "desc1",
+      "time": 1,
+      "difficulty": "difficulty1",
+      "ingredients": "ingredients1",
+      "calories": 1,
+      "fats": 1,
+      "proteins": 1,
+      "carbohydrates": 1,
+      "preferences": {
+        "isVegan": false,
+        "isVegetarian": false,
+        "isKeto": false,
+        "isLactose": false,
+        "isHalal": false,
+        "isKosher": false,
+        "isDairyFree": false,
+        "isLowCarbs": false
+      }
+    },
+    {
+      "id": 2,
+      "name": "name2",
+      "mealType": "mealType2",
+      "desc": "desc2",
+      "time": 2,
+      "difficulty": "difficulty2",
+      "ingredients": "ingredients2",
+      "calories": 2,
+      "fats": 2,
+      "proteins": 2,
+      "carbohydrates": 2,
+      "preferences": {
+        "isVegan": false,
+        "isVegetarian": false,
+        "isKeto": false,
+        "isLactose": false,
+        "isHalal": false,
+        "isKosher": false,
+        "isDairyFree": false,
+        "isLowCarbs": false
+      }
+    }
+  ]
+]
