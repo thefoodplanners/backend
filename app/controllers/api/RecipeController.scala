@@ -1,10 +1,11 @@
 package controllers.api
 
-import models.{ FetchedMealSlot, Recipe, RecipeDao, SESSION_KEY }
+import models._
 import org.joda.time.LocalDate
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.Json
 import play.api.mvc._
 
+import java.io.File
 import javax.inject._
 import scala.concurrent.{ ExecutionContext, Future }
 
@@ -13,7 +14,7 @@ import scala.concurrent.{ ExecutionContext, Future }
  * with recipes.
  */
 @Singleton
-class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
+class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, imageDao: ImageDao)
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
@@ -22,11 +23,6 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
       Json.stringify(Json.obj("recipes" -> recipes))
     }
     recipesJsonString.map(Ok(_))
-  }
-
-  def addRecipe: Action[JsValue] = Action.async(parse.json) { request =>
-    val recipe: Option[Recipe] = Json.fromJson[Recipe](request.body).asOpt
-    ???
   }
 
   def getRecipeFromId(recipeId: Int): Action[AnyContent] = Action.async {
@@ -46,15 +42,33 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        val mealSlotsJsonString = database.fetchAllMealSlots(userId.toInt, weekDateString).map { mealSlots =>
-          val mealSlotsArray = mealSlotToArray(mealSlots)
-          Json.stringify(Json.toJson(mealSlotsArray))
+        val mealSlotsJson = database.fetchAllMealSlots(userId.toInt, weekDateString).flatMap { mealSlots =>
+          mealSlotImageRefToString(mealSlots).map { mealSlots =>
+            val mealSlotsArray = mealSlotToArray(mealSlots)
+            Json.toJson(mealSlotsArray)
+          }
         }
-        mealSlotsJsonString.map(Ok(_))
+        mealSlotsJson.map(Ok(_))
       }
       .getOrElse {
         Future.successful(Unauthorized("Sorry buddy, not allowed in"))
       }
+  }
+
+  private def mealSlotImageRefToString(mealSlots: Seq[FetchedMealSlot]): Future[Seq[FetchedMealSlot]] = {
+    val imageRefs: Seq[String] = mealSlots.map(_.recipe.imageRef)
+
+    imageDao.fetchImages(imageRefs).map { _ =>
+      val nameWithImageString = imageDao.imagesToString
+
+      mealSlots.map { fetchedMealSlot =>
+        val fileName = fetchedMealSlot.recipe.imageRef.split("/").last
+        nameWithImageString
+          .get(fileName)
+          .map(imageString => fetchedMealSlot.copy(recipe = fetchedMealSlot.recipe.copy(imageRef = imageString)))
+          .getOrElse(fetchedMealSlot)
+      }
+    }
   }
 
   /**
@@ -72,11 +86,16 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao)
       }
 
     Seq.tabulate(7) { index =>
-     daySlots
-       .get(index)
-       .map(_.map(_.recipe))
-       .getOrElse(Seq.empty)
+      daySlots
+        .get(index)
+        .map(_.map(_.recipe))
+        .getOrElse(Seq.empty)
     }
+  }
+
+
+  def testImage: Action[AnyContent] = Action {
+    Ok.sendFile(new File("./public/images/cat.jpg"))
   }
 
 }

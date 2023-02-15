@@ -4,12 +4,13 @@ import java.util.Date
 
 package object models {
   val SESSION_KEY = "USERID"
+  val IMAGES_PATH = "./public/images"
 
   case class Recipe(
     id: Int, name: String, mealType: String, desc: String, time: Int,
-    difficulty: String, ingredients: String,
-    calories: Int, fats: Float, proteins: Float, carbohydrates: Float,
-    preferences: Preferences
+    difficulty: String, ingredients: String, calories: Int, fats: Float,
+    proteins: Float, carbohydrates: Float, preferences: Preferences,
+    imageRef: String
   )
 
   object Recipe {
@@ -39,5 +40,4 @@ package object models {
   object FetchedMealSlot {
     implicit val formats: OFormat[FetchedMealSlot] = Json.format[FetchedMealSlot]
   }
-
 }

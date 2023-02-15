@@ -29,13 +29,14 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
       SqlParser.bool("halal") ~
       SqlParser.bool("kosher") ~
       SqlParser.bool("dairy_free") ~
-      SqlParser.bool("low_carbs")
+      SqlParser.bool("low_carbs") ~
+      SqlParser.str("image")
     ) map {
     case id ~ name ~ mealType ~ desc ~ time ~ diff ~ ingr ~ cal ~ fats ~ proteins ~
       carbs ~ isVegan ~ isVegetarian ~ isKeto ~ isLactose ~ isHalal ~ isKosher ~
-      isDairyFree ~ isLowCarbs =>
+      isDairyFree ~ isLowCarbs ~ imageRef =>
       val preferences = Preferences(isVegan, isVegetarian, isKeto, isLactose, isHalal, isKosher, isDairyFree, isLowCarbs)
-      Recipe(id, name, mealType, desc, time, diff, ingr, cal, fats, proteins, carbs, preferences)
+      Recipe(id, name, mealType, desc, time, diff, ingr, cal, fats, proteins, carbs, preferences, imageRef)
   }
 
   private val mealSlotParser = (
@@ -101,7 +102,7 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
       db.withConnection { implicit conn =>
         val weekDate: LocalDate = LocalDate.parse(weekDateString)
 
-        val allRows: Seq[FetchedMealSlot] = {
+        val allMealSlotRows: Seq[FetchedMealSlot] = {
           SQL"""SELECT *
                FROM Meal_Slot ms
                INNER JOIN Recipe r ON ms.RecipeId = r.RecipeId
@@ -109,7 +110,7 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
                AND Date BETWEEN ${weekDate.toString} AND ${weekDate.withDayOfWeek(7).toString};
                """.as(mealSlotParser.*)
         }
-        allRows
+        allMealSlotRows
       }
     }(databaseExecutionContext)
   }

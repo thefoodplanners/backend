@@ -3,13 +3,14 @@
 # ~~~~
 
 # Main endpoints
-GET     /test                       controllers.LoginController.test
 POST    /login                      controllers.LoginController.processLogin
 GET     /logout                     controllers.LoginController.logout
 GET     /list-of-calories           controllers.api.CalorieController.getTotalCalories(calories: List[Int])
 GET     /recipe                     controllers.api.RecipeController.getRecipeFromId(userId: Int)
 GET     /recipes                    controllers.api.RecipeController.getAllRecipes
 GET     /allMeals                   controllers.api.RecipeController.getAllMealSlots(weekDate: String)
+GET     /test                       controllers.LoginController.test
+GET     /testImage                  controllers.api.RecipeController.testImage
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(file)

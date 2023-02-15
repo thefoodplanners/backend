@@ -21,7 +21,8 @@
         "isKosher": false,
         "isDairyFree": false,
         "isLowCarbs": false
-      }
+      },
+      "imageRef": "imageRef1"
     },
     {
       "id": 2,
@@ -44,7 +45,14 @@
         "isKosher": false,
         "isDairyFree": false,
         "isLowCarbs": false
-      }
+      },
+      "imageRef": "imageRef2"
     }
-  ]
+  ],
+  [],
+  [],
+  [],
+  [],
+  [],
+  []
 ]

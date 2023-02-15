@@ -1,7 +1,7 @@
 package controllers
 
 import controllers.api.RecipeController
-import models.{ FetchedMealSlot, Preferences, Recipe, RecipeDao }
+import models.{ FetchedMealSlot, ImageDao, Preferences, Recipe, RecipeDao }
 import org.joda.time.LocalDate
 import org.mockito.Mockito.when
 import org.scalatest.flatspec.AnyFlatSpec
@@ -38,7 +38,8 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
       isKosher = false,
       isDairyFree = false,
       isLowCarbs = false
-    )
+    ),
+    imageRef = "imageRef1"
   )
 
   val recipeExample2: Recipe = Recipe(
@@ -62,7 +63,8 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
       isKosher = false,
       isDairyFree = false,
       isLowCarbs = false
-    )
+    ),
+    imageRef = "imageRef2"
   )
 
   val fetchedMealSlotExample: Seq[FetchedMealSlot] = Seq(
@@ -72,23 +74,30 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
 
   "RecipeController#mealSlotToArray" should "return the correct 2d array" in {
 
-      val database = mock[RecipeDao]
-      when(database.fetchAllMealSlots(1, "2023-01-02"))
-        .thenReturn(Future.successful(fetchedMealSlotExample))
+    val database = mock[RecipeDao]
+    val imageDao = mock[ImageDao]
 
-      val controller = new RecipeController(Helpers.stubControllerComponents(), database)
+    when(database.fetchAllMealSlots(1, "2023-01-02"))
+      .thenReturn(Future.successful(fetchedMealSlotExample))
 
-      val request = FakeRequest(GET, "/allMeals")
-        .withSession("USERID" -> "1")
+    when(imageDao.fetchImages(Seq("imageRef1", "imageRef2")))
+      .thenReturn(Future.successful(()))
+    when(imageDao.imagesToString)
+      .thenReturn(Map.empty)
 
-      val result = controller.getAllMealSlots("2023-01-02").apply(request)
+    val controller = new RecipeController(Helpers.stubControllerComponents(), database, imageDao)
 
-      val actual = contentAsString(result)
-      val expected = Source.fromResource("mealSlot1.json")
-        .getLines()
-        .mkString
-        .replaceAll(" ", "")
+    val request = FakeRequest(GET, "/allMeals")
+      .withSession("USERID" -> "1")
 
-      actual shouldBe expected
+    val result = controller.getAllMealSlots("2023-01-02").apply(request)
+
+    val actual = contentAsString(result)
+    val expected = Source.fromResource("mealSlot1.json")
+      .getLines()
+      .mkString
+      .replaceAll(" ", "")
+
+    actual shouldBe expected
   }
 }

@@ -13,4 +13,4 @@ dist
 /.classpath
 /.project
 /.settings
-conf/application.conf
+conf/defaults.conf

@@ -11,7 +11,8 @@ lazy val root = (project in file("."))
       "mysql" % "mysql-connector-java" % "8.0.32",
       "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
       "org.scalatestplus" %% "mockito-4-6" % "3.2.15.0" % Test,
-      "com.github.nscala-time" %% "nscala-time" % "2.32.0"
+      "com.github.nscala-time" %% "nscala-time" % "2.32.0",
+      "com.hierynomus" % "sshj" % "0.35.0",
     ),
     scalacOptions ++= Seq(
       "-feature",
