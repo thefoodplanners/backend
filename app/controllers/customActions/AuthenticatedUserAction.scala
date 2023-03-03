@@ -6,7 +6,7 @@ import play.api.mvc._
 import javax.inject._
 import scala.concurrent.{ ExecutionContext, Future }
 
-class AuthenticatedUserAction @Inject() (parser: BodyParsers.Default)(implicit ec: ExecutionContext)
+class AuthenticatedUserAction @Inject()(parser: BodyParsers.Default)(implicit ec: ExecutionContext)
   extends ActionBuilderImpl(parser) {
 
   private val logger = play.api.Logger(this.getClass)

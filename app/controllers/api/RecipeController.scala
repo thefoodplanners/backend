@@ -32,6 +32,23 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
     recipeJsonString.map(Ok(_))
   }
 
+  def getRecommendations: Action[AnyContent] = Action.async { request =>
+    request.session
+      .get(SESSION_KEY)
+      .map { userId =>
+        // Fetch recipes from database and split it into groups of 3.
+        database.fetchRecommendations(userId.toInt).flatMap { recipes =>
+          mealSlotImageRefToString(recipes).map { recipesWithImg =>
+            val splitRecipes = recipesWithImg.grouped(3).toSeq
+            Ok(Json.toJson(splitRecipes))
+          }
+        }
+      }
+      .getOrElse {
+        Future.successful(Unauthorized("Sorry buddy, not allowed in"))
+      }
+  }
+
   /**
    * Action which fetches all the meal slots for a given user in a given week.
    *
@@ -43,7 +60,13 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
       .get(SESSION_KEY)
       .map { userId =>
         val mealSlotsJson = database.fetchAllMealSlots(userId.toInt, weekDateString).flatMap { mealSlots =>
-          mealSlotImageRefToString(mealSlots).map { mealSlots =>
+          val mealSlotsWithImg = mealSlotImageRefToString(mealSlots.map(_.recipe)).map { recipes =>
+            mealSlots.zip(recipes).map { case (mealSlot, recipeWithImg) =>
+              mealSlot.copy(recipe = recipeWithImg)
+            }
+          }
+
+          mealSlotsWithImg.map { mealSlots =>
             val mealSlotsArray = mealSlotToArray(mealSlots)
             Json.toJson(mealSlotsArray)
           }
@@ -55,18 +78,18 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
       }
   }
 
-  private def mealSlotImageRefToString(mealSlots: Seq[FetchedMealSlot]): Future[Seq[FetchedMealSlot]] = {
-    val imageRefs: Seq[String] = mealSlots.map(_.recipe.imageRef)
+  private def mealSlotImageRefToString(recipes: Seq[Recipe]): Future[Seq[Recipe]] = {
+    val imageRefs: Seq[String] = recipes.map(_.imageRef)
 
     imageDao.fetchImages(imageRefs).map { _ =>
       val nameWithImageString = imageDao.imagesToString
 
-      mealSlots.map { fetchedMealSlot =>
-        val fileName = fetchedMealSlot.recipe.imageRef.split("/").last
+      recipes.map { recipe =>
+        val fileName = recipe.imageRef.split("/").last
         nameWithImageString
           .get(fileName)
-          .map(imageString => fetchedMealSlot.copy(recipe = fetchedMealSlot.recipe.copy(imageRef = imageString)))
-          .getOrElse(fetchedMealSlot)
+          .map(imageString => recipe.copy(imageRef = imageString))
+          .getOrElse(recipe)
       }
     }
   }

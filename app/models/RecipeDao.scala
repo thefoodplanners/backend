@@ -126,21 +126,24 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
   Once queue is empty, could either repeat recommendation steps above or fetch all recipes
   with less constrained preferences.
    */
-  def fetchRecommendations(userId: Int): Future[List[Recipe]] = {
+  def fetchRecommendations(userId: Int): Future[Seq[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
         val allRows =
-          SQL"""SELECT *
+          SQL"""SELECT RecipeID, Name, Type, Description, Time, Difficulty, Ingredients, Calories,
+                Fats, Proteins, Carbohydrates, R.Vegan, R.Vegetarian, R.Keto, R.Lactose, R.Halal,
+                R.Kosher, R.Dairy_free, R.Low_carbs, image
                FROM Recipe R
-               INNER JOIN Users U
-                 ON (R.Vegan = U.Vegan
-                   AND R.Vegetarian = U.Vegetarian
-                   AND R.Keto = U.Keto
-                   AND R.Lactose = U.Lactose
-                   AND R.Halal = U.Halal
-                   AND R.Kosher = U.Kosher
-                   AND R.Dairy_free = U.Dairy_free
-                   AND R.Low_carbs = U.Low_carbs)
+               INNER JOIN Preferences P ON
+                   P.UserID = $userId
+                   AND (R.Vegan OR (NOT P.Vegan))
+                   AND (R.Vegetarian OR (NOT P.Vegetarian))
+                   AND (R.Keto OR (NOT P.Keto))
+                   AND (R.Lactose OR (NOT P.Lactose))
+                   AND (R.Halal OR (NOT P.Halal))
+                   AND (R.Kosher OR (NOT P.Kosher))
+                   AND (R.Dairy_free OR (NOT P.Dairy_free))
+                   AND (R.Low_carbs OR (NOT P.Low_carbs));
                """.as(recipeParser.*)
         allRows
       }
