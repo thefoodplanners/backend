@@ -88,9 +88,24 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
   def addMealSlot(mealSlot: ReceivedMealSlot): Future[Option[Long]] = {
     Future {
       db.withConnection { implicit conn =>
-          SQL"""INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
-               VALUES (${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipeId}, ${mealSlot.userId});
+          SQL"""
+                INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
+                VALUES (${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipeId}, ${mealSlot.userId});
              """.executeInsert()
+      }
+    }(databaseExecutionContext)
+  }
+
+  def deleteMealSlot(mealSlot: ReceivedMealSlot): Future[Int] = {
+    Future {
+      db.withConnection { implicit conn =>
+        SQL"""
+              DELETE FROM Meal_Slot
+              WHERE Date = ${mealSlot.date} AND
+              Meal_Number = ${mealSlot.mealNum} AND
+              RecipeID = ${mealSlot.recipeId} AND
+              UserID = ${mealSlot.userId}
+             """.executeUpdate()
       }
     }(databaseExecutionContext)
   }
@@ -101,12 +116,13 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
         val weekDate: LocalDate = LocalDate.parse(weekDateString)
 
         val allMealSlotRows: Seq[FetchedMealSlot] = {
-          SQL"""SELECT *
-               FROM Meal_Slot ms
-               INNER JOIN Recipe r ON ms.RecipeId = r.RecipeId
-               WHERE ms.UserID = $userId
-               AND Date BETWEEN ${weekDate.toString} AND ${weekDate.withDayOfWeek(7).toString};
-               """.as(mealSlotParser.*)
+          SQL"""
+                SELECT *
+                FROM Meal_Slot ms
+                INNER JOIN Recipe r ON ms.RecipeId = r.RecipeId
+                WHERE ms.UserID = $userId
+                AND Date BETWEEN ${weekDate.toString} AND ${weekDate.withDayOfWeek(7).toString};
+                """.as(mealSlotParser.*)
         }
         allMealSlotRows
       }
@@ -130,15 +146,15 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
                 R.Kosher, R.Dairy_free, R.Low_carbs, image
                FROM Recipe R
                INNER JOIN Preferences P ON
-                   P.UserID = $userId
-                   AND (R.Vegan OR (NOT P.Vegan))
-                   AND (R.Vegetarian OR (NOT P.Vegetarian))
-                   AND (R.Keto OR (NOT P.Keto))
-                   AND (R.Lactose OR (NOT P.Lactose))
-                   AND (R.Halal OR (NOT P.Halal))
-                   AND (R.Kosher OR (NOT P.Kosher))
-                   AND (R.Dairy_free OR (NOT P.Dairy_free))
-                   AND (R.Low_carbs OR (NOT P.Low_carbs));
+                   P.UserID = $userId AND
+                   (R.Vegan OR (NOT P.Vegan)) AND
+                   (R.Vegetarian OR (NOT P.Vegetarian)) AND
+                   (R.Keto OR (NOT P.Keto)) AND
+                   (R.Lactose OR (NOT P.Lactose)) AND
+                   (R.Halal OR (NOT P.Halal)) AND
+                   (R.Kosher OR (NOT P.Kosher)) AND
+                   (R.Dairy_free OR (NOT P.Dairy_free)) AND
+                   (R.Low_carbs OR (NOT P.Low_carbs));
                """.as(recipeParser.*)
         allRows
       }

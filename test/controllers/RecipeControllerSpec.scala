@@ -10,7 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.libs.json.Json
-import play.api.test.Helpers.{ GET, POST, contentAsJson, contentAsString, defaultAwaitTimeout }
+import play.api.test.Helpers.{ GET, POST, contentAsString, defaultAwaitTimeout }
 import play.api.test.{ FakeRequest, Helpers }
 
 import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
@@ -133,5 +133,32 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
 
     val actual = contentAsString(result)
     actual shouldBe "Meal successfully added."
+  }
+
+
+  "deleteMealSlot" should "respond with meal being successfully deleted" in {
+
+    when(databaseMock.deleteMealSlot(receivedMealSlotExample))
+      .thenReturn(Future.successful(1))
+
+    val controller = new RecipeController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
+
+    val jsonBody = Json.parse(
+      """{
+        |  "date": "2023-01-30",
+        |  "mealNum": 1,
+        |  "recipeId": 1
+        |}""".stripMargin
+    )
+
+    val request = FakeRequest(POST, "/addMealSlot")
+      .withSession("USERID" -> "1")
+      .withHeaders("Content-type" -> "application/json")
+      .withBody(jsonBody)
+
+    val result = controller.deleteMealSlot().apply(request)
+
+    val actual = contentAsString(result)
+    actual shouldBe "Meal successfully deleted."
   }
 }

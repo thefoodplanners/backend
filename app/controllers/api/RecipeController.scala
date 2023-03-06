@@ -150,6 +150,33 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
       }
   }
 
+  def deleteMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
+    // Fetch user id from session cookie
+    request.session
+      .get(SESSION_KEY)
+      .map { userId =>
+        // Convert request body json to case class
+        Json.fromJson[ReceivedMealSlot](request.body)
+          .asOpt
+          .map { mealSlot =>
+            val mealSlotWithUserId = mealSlot.copy(userId = userId)
+            database
+              .deleteMealSlot(mealSlotWithUserId)
+              .map(numOfRows =>
+                if (numOfRows == 0) InternalServerError("No rows deleted.")
+                else if (numOfRows == 1) Ok("Meal successfully deleted.")
+                else InternalServerError("More than 1 row deleted.")
+              )
+          }
+          .getOrElse {
+            Future.successful(BadRequest("Error in processing Json data in request body."))
+          }
+      }
+      .getOrElse {
+        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+      }
+  }
+
   def testImage: Action[AnyContent] = Action {
     Ok.sendFile(new File("./public/images/cat.jpg"))
   }
