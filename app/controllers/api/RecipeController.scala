@@ -2,7 +2,7 @@ package controllers.api
 
 import models._
 import org.joda.time.LocalDate
-import play.api.libs.json.Json
+import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
 
 import java.io.File
@@ -10,8 +10,7 @@ import javax.inject._
 import scala.concurrent.{ ExecutionContext, Future }
 
 /**
- * This controller handles HTTP requests dealing
- * with recipes.
+ * This controller handles HTTP requests dealing with recipes.
  */
 @Singleton
 class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, imageDao: ImageDao)
@@ -32,6 +31,12 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
     recipeJsonString.map(Ok(_))
   }
 
+  /**
+   * Action which fetches all the recommended recipes for a given user.
+   *
+   * @return HTTP response consisting of 2D array of all the recommended
+   *         recipes, split into groups of 3.
+   */
   def getRecommendations: Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
@@ -116,6 +121,34 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
     }
   }
 
+  def addMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
+    // Fetch user id from session cookie
+    request.session
+      .get(SESSION_KEY)
+      .map { userId =>
+        // Convert request body json to case class
+        Json.fromJson[ReceivedMealSlot](request.body)
+          .asOpt
+          .map { mealSlot =>
+            val mealSlotWithUserId = mealSlot.copy(userId = userId)
+            database
+              .addMealSlot(mealSlotWithUserId)
+              .map(primaryKeyOpt =>
+                primaryKeyOpt
+                  .map(_ => Ok("Meal successfully added."))
+                  .getOrElse {
+                    InternalServerError("Could not add meal slot to database.")
+                  }
+              )
+          }
+          .getOrElse {
+            Future.successful(BadRequest("Error in processing Json data in request body."))
+          }
+      }
+      .getOrElse {
+        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+      }
+  }
 
   def testImage: Action[AnyContent] = Action {
     Ok.sendFile(new File("./public/images/cat.jpg"))

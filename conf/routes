@@ -4,6 +4,7 @@
 
 # Main endpoints
 GET     /allMeals                   controllers.api.RecipeController.getAllMealSlots(weekDate: String)
+POST    /addMealSlot                controllers.api.RecipeController.addMealSlot
 GET     /recommendMeals             controllers.api.RecipeController.getRecommendations
 POST    /login                      controllers.LoginController.processLogin
 GET     /logout                     controllers.LoginController.logout

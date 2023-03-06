@@ -1,13 +1,16 @@
 package controllers
 
+import akka.actor.ActorSystem
+import akka.stream.Materializer
 import controllers.api.RecipeController
-import models.{ FetchedMealSlot, ImageDao, Preferences, Recipe, RecipeDao }
+import models._
 import org.joda.time.LocalDate
 import org.mockito.Mockito.when
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.test.Helpers.{ GET, contentAsString, defaultAwaitTimeout }
+import play.api.libs.json.Json
+import play.api.test.Helpers.{ GET, POST, contentAsJson, contentAsString, defaultAwaitTimeout }
 import play.api.test.{ FakeRequest, Helpers }
 
 import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
@@ -15,7 +18,9 @@ import scala.io.Source
 
 class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
 
+  val as: ActorSystem = ActorSystem()
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  implicit val mat: Materializer = Materializer(as)
 
   val recipeExample1: Recipe = Recipe(
     id = 1,
@@ -72,20 +77,23 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
     FetchedMealSlot(LocalDate.parse("2023-01-30").toDate, 2, recipeExample2)
   )
 
-  "RecipeController#mealSlotToArray" should "return the correct 2d array" in {
+  val receivedMealSlotExample: ReceivedMealSlot =
+    ReceivedMealSlot(LocalDate.parse("2023-01-30").toDate, 1, 1, "1")
 
-    val database = mock[RecipeDao]
-    val imageDao = mock[ImageDao]
+  val databaseMock: RecipeDao = mock[RecipeDao]
+  val imageDaoMock: ImageDao = mock[ImageDao]
 
-    when(database.fetchAllMealSlots(1, "2023-01-02"))
+  "mealSlotToArray" should "return the correct 2d array" in {
+
+    when(databaseMock.fetchAllMealSlots(1, "2023-01-02"))
       .thenReturn(Future.successful(fetchedMealSlotExample))
 
-    when(imageDao.fetchImages(Seq("imageRef1", "imageRef2")))
+    when(imageDaoMock.fetchImages(Seq("imageRef1", "imageRef2")))
       .thenReturn(Future.successful(()))
-    when(imageDao.imagesToString)
+    when(imageDaoMock.imagesToString)
       .thenReturn(Map.empty)
 
-    val controller = new RecipeController(Helpers.stubControllerComponents(), database, imageDao)
+    val controller = new RecipeController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
 
     val request = FakeRequest(GET, "/allMeals")
       .withSession("USERID" -> "1")
@@ -99,5 +107,31 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
       .replaceAll(" ", "")
 
     actual shouldBe expected
+  }
+
+  "addMealSlot" should "respond with meal being successfully added" in {
+
+    when(databaseMock.addMealSlot(receivedMealSlotExample))
+      .thenReturn(Future.successful(Some(1)))
+
+    val controller = new RecipeController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
+
+    val jsonBody = Json.parse(
+      """{
+        |  "date": "2023-01-30",
+        |  "mealNum": 1,
+        |  "recipeId": 1
+        |}""".stripMargin
+    )
+
+    val request = FakeRequest(POST, "/addMealSlot")
+      .withSession("USERID" -> "1")
+      .withHeaders("Content-type" -> "application/json")
+      .withBody(jsonBody)
+
+    val result = controller.addMealSlot().apply(request)
+
+    val actual = contentAsString(result)
+    actual shouldBe "Meal successfully added."
   }
 }

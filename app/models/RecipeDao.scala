@@ -85,14 +85,12 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
     }(databaseExecutionContext)
   }
 
-  def addMealToSlot(slot: ReceivedMealSlot): Future[Option[Long]] = {
+  def addMealSlot(mealSlot: ReceivedMealSlot): Future[Option[Long]] = {
     Future {
       db.withConnection { implicit conn =>
-        val newRow =
-          SQL"""INSERT INTO Meal_Slot(Date, Type, RecipeID, UserID)
-               VALUES (${slot.date}, ${slot.mealType}, ${slot.recipeId}, ${slot.userId});
+          SQL"""INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
+               VALUES (${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipeId}, ${mealSlot.userId});
              """.executeInsert()
-        newRow
       }
     }(databaseExecutionContext)
   }
@@ -115,16 +113,13 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
     }(databaseExecutionContext)
   }
 
-  /*
-  Recommendation.
-  Fetch preferences of user and which meal type they picked (breakfast, lunch, dinner)
-  fetch all recipes which fit that preference and meal type
-  randomise order
-  display first n recipes. Queue could work.
-  Refreshing:
-  if user refreshes, next n recipes will be displayed and taken out of the queue.
-  Once queue is empty, could either repeat recommendation steps above or fetch all recipes
-  with less constrained preferences.
+  /**
+   * Fetch all the recipes from the database that correspond with the preference
+   * of the user.
+   *
+   * @param userId Id of the user requesting the query.
+   * @return List of all the recipes from the database that correspond with the preference
+   *         of the user
    */
   def fetchRecommendations(userId: Int): Future[Seq[Recipe]] = {
     Future {
