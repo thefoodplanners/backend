@@ -4,11 +4,13 @@
 
 # Main endpoints
 GET     /allMeals                   controllers.api.RecipeController.getAllMealSlots(weekDate: String)
-POST    /addMealSlot                controllers.api.RecipeController.addMealSlot
-DELETE  /deleteMealSlot             controllers.api.RecipeController.deleteMealSlot
++ nocsrf
+POST    /addMealSlot                controllers.api.RecipeController.addMealSlot()
+DELETE  /deleteMealSlot             controllers.api.RecipeController.deleteMealSlot()
 GET     /recommendMeals             controllers.api.RecipeController.getRecommendations
 POST    /login                      controllers.LoginController.processLogin
 GET     /logout                     controllers.LoginController.logout
+POST    /register                   controllers.LoginController.register
 GET     /list-of-calories           controllers.api.CalorieController.getTotalCalories(calories: List[Int])
 GET     /recipe                     controllers.api.RecipeController.getRecipeFromId(userId: Int)
 GET     /recipes                    controllers.api.RecipeController.getAllRecipes

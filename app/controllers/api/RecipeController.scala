@@ -121,7 +121,7 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
     }
   }
 
-  def addMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
+  def addMealSlot(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     // Fetch user id from session cookie
     request.session
       .get(SESSION_KEY)
@@ -150,7 +150,7 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
       }
   }
 
-  def deleteMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
+  def deleteMealSlot(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     // Fetch user id from session cookie
     request.session
       .get(SESSION_KEY)

@@ -33,6 +33,16 @@ package object models {
     implicit val formats: OFormat[LoginData] = Json.format[LoginData]
   }
 
+  case class RegisterData(
+    email: String,
+    username: String,
+    password: String
+  )
+
+  object RegisterData {
+    implicit val formats: OFormat[RegisterData] = Json.format[RegisterData]
+  }
+
   case class ReceivedMealSlot(date: Date, mealNum: Int, recipeId: Int, userId: String = "0")
 
   object ReceivedMealSlot {
