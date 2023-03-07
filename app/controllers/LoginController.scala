@@ -1,9 +1,7 @@
 package controllers
 
 import controllers.customActions.AuthenticatedUserAction
-import models.{ LoginDao, LoginData, SESSION_KEY }
-import play.api.data.Forms._
-import play.api.data._
+import models.{ LoginDao, LoginData, RegisterData, SESSION_KEY }
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc._
 
@@ -45,6 +43,12 @@ class LoginController @Inject() (
   
   def logout: Action[AnyContent] = Action {
     Ok("Successfully logged out.").withNewSession
+  }
+
+  def register: Action[JsValue] = Action.async(parse.json) { request =>
+    Json.fromJson[RegisterData](request.body)
+      .asOpt
+    ???
   }
 
   def test: Action[AnyContent] = Action {
