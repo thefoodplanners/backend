@@ -4,7 +4,6 @@
 
 # Main endpoints
 GET     /allMeals                   controllers.api.RecipeController.getAllMealSlots(weekDate: String)
-+ nocsrf
 POST    /addMealSlot                controllers.api.RecipeController.addMealSlot()
 DELETE  /deleteMealSlot             controllers.api.RecipeController.deleteMealSlot()
 GET     /recommendMeals             controllers.api.RecipeController.getRecommendations
