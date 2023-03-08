@@ -27,31 +27,33 @@ package object models {
     implicit val formats: OFormat[Preferences] = Json.format[Preferences]
   }
 
-  case class LoginData(username: String, password: String)
-
-  object LoginData {
-    implicit val formats: OFormat[LoginData] = Json.format[LoginData]
-  }
-
-  case class RegisterData(
-    email: String,
-    username: String,
-    password: String
-  )
-
-  object RegisterData {
-    implicit val formats: OFormat[RegisterData] = Json.format[RegisterData]
-  }
-
-  case class ReceivedMealSlot(date: Date, mealNum: Int, recipeId: Int, userId: String = "0")
+  case class ReceivedMealSlot(date: Date, mealNum: Int, recipeId: Int)
 
   object ReceivedMealSlot {
-    implicit val formats: OFormat[ReceivedMealSlot] = Json.using[Json.WithDefaultValues].format[ReceivedMealSlot]
+    implicit val formats: OFormat[ReceivedMealSlot] = Json.format[ReceivedMealSlot]
   }
 
   case class FetchedMealSlot(date: Date, mealNum: Int, recipe: Recipe)
 
   object FetchedMealSlot {
     implicit val formats: OFormat[FetchedMealSlot] = Json.format[FetchedMealSlot]
+  }
+
+  case class UpdateMealSlot(date: Date, mealNum: Int, oldRecipeId: Int, newRecipeId: Int)
+
+  object UpdateMealSlot {
+    implicit val formats: OFormat[UpdateMealSlot] = Json.format[UpdateMealSlot]
+  }
+
+  case class LoginData(username: String, password: String)
+
+  object LoginData {
+    implicit val formats: OFormat[LoginData] = Json.format[LoginData]
+  }
+
+  case class RegisterData(email: String, username: String, password: String)
+
+  object RegisterData {
+    implicit val formats: OFormat[RegisterData] = Json.format[RegisterData]
   }
 }

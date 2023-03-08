@@ -28,4 +28,15 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
       }
     }(databaseExecutionContext)
   }
+
+  def addNewUser(registerData: RegisterData): Future[Option[Long]] = {
+    Future {
+      db.withConnection { implicit conn =>
+        SQL"""
+             INSERT INTO Users(Username, Password, Email)
+             VALUES (${registerData.username}, ${registerData.password}, ${registerData.email});
+           """.executeInsert()
+      }
+    }(databaseExecutionContext)
+  }
 }

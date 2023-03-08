@@ -2,19 +2,25 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# Main endpoints
-GET     /allMeals                   controllers.api.RecipeController.getAllMealSlots(weekDate: String)
-POST    /addMealSlot                controllers.api.RecipeController.addMealSlot()
-DELETE  /deleteMealSlot             controllers.api.RecipeController.deleteMealSlot()
-GET     /recommendMeals             controllers.api.RecipeController.getRecommendations
-POST    /login                      controllers.LoginController.processLogin
-GET     /logout                     controllers.LoginController.logout
-POST    /register                   controllers.LoginController.register
-GET     /list-of-calories           controllers.api.CalorieController.getTotalCalories(calories: List[Int])
-GET     /recipe                     controllers.api.RecipeController.getRecipeFromId(userId: Int)
-GET     /recipes                    controllers.api.RecipeController.getAllRecipes
-GET     /test                       controllers.LoginController.test
-GET     /testImage                  controllers.api.RecipeController.testImage
+# Calendar endpoints
+GET     /allMeals                   controllers.api.CalendarController.getAllMealSlots(weekDate: String)
+POST    /updateMealSlot             controllers.api.CalendarController.updateMealSlot()
+POST    /addMealSlot                controllers.api.CalendarController.addMealSlot()
+DELETE  /deleteMealSlot             controllers.api.CalendarController.deleteMealSlot()
+GET     /recommendMeals             controllers.api.CalendarController.getRecommendations
+
+# Login endpoints
+POST    /login                      controllers.api.LoginController.processLogin
+GET     /logout                     controllers.api.LoginController.logout
+POST    /register                   controllers.api.LoginController.register
+
+# Recipe endpoints
+GET     /recipe                     controllers.api.CalendarController.getRecipeFromId(userId: Int)
+GET     /recipes                    controllers.api.CalendarController.getAllRecipes
+
+# Dev endpoints
+GET     /test                       controllers.api.LoginController.test
+GET     /testImage                  controllers.api.CalendarController.testImage
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(file)

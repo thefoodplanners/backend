@@ -1,26 +1,28 @@
 package controllers
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-import controllers.api.RecipeController
+import controllers.api.CalendarController
 import models._
 import org.joda.time.LocalDate
 import org.mockito.Mockito.when
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.http.Status.{ BAD_REQUEST, OK }
 import play.api.libs.json.Json
-import play.api.test.Helpers.{ GET, POST, contentAsString, defaultAwaitTimeout }
+import play.api.test.Helpers.{ GET, POST, contentAsString, defaultAwaitTimeout, status }
 import play.api.test.{ FakeRequest, Helpers }
 
 import scala.concurrent.{ ExecutionContext, ExecutionContextExecutor, Future }
 import scala.io.Source
 
-class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
+class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
 
-  val as: ActorSystem = ActorSystem()
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit val mat: Materializer = Materializer(as)
+
+  val databaseMock: CalendarDao = mock[CalendarDao]
+  val imageDaoMock: ImageDao = mock[ImageDao]
+
+  val controller = new CalendarController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
 
   val recipeExample1: Recipe = Recipe(
     id = 1,
@@ -78,10 +80,10 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
   )
 
   val receivedMealSlotExample: ReceivedMealSlot =
-    ReceivedMealSlot(LocalDate.parse("2023-01-30").toDate, 1, 1, "1")
+    ReceivedMealSlot(LocalDate.parse("2023-01-30").toDate, 1, 1)
 
-  val databaseMock: RecipeDao = mock[RecipeDao]
-  val imageDaoMock: ImageDao = mock[ImageDao]
+  val updateMealSlotExample: UpdateMealSlot =
+    UpdateMealSlot(LocalDate.parse("2023-01-30").toDate, 1, 1, 2)
 
   "mealSlotToArray" should "return the correct 2d array" in {
 
@@ -92,8 +94,6 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
       .thenReturn(Future.successful(()))
     when(imageDaoMock.imagesToString)
       .thenReturn(Map.empty)
-
-    val controller = new RecipeController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
 
     val request = FakeRequest(GET, "/allMeals")
       .withSession("USERID" -> "1")
@@ -109,12 +109,10 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
     actual shouldBe expected
   }
 
-  "addMealSlot" should "respond with meal being successfully added" in {
+  "addMealSlot" should "return an Ok response, meal being successfully added" in {
 
-    when(databaseMock.addMealSlot(receivedMealSlotExample))
+    when(databaseMock.addMealSlot("1", receivedMealSlotExample))
       .thenReturn(Future.successful(Some(1)))
-
-    val controller = new RecipeController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
 
     val jsonBody = Json.parse(
       """{
@@ -131,17 +129,15 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
 
     val result = controller.addMealSlot().apply(request)
 
-    val actual = contentAsString(result)
-    actual shouldBe "Meal successfully added."
+    status(result) shouldBe OK
+    contentAsString(result) shouldBe "Meal successfully added."
   }
 
 
-  "deleteMealSlot" should "respond with meal being successfully deleted" in {
+  "deleteMealSlot" should "return an Ok response, stating meal has successfully been deleted" in {
 
-    when(databaseMock.deleteMealSlot(receivedMealSlotExample))
+    when(databaseMock.deleteMealSlot("1", receivedMealSlotExample))
       .thenReturn(Future.successful(1))
-
-    val controller = new RecipeController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
 
     val jsonBody = Json.parse(
       """{
@@ -151,14 +147,62 @@ class RecipeControllerSpec extends AnyFlatSpec with MockitoSugar {
         |}""".stripMargin
     )
 
-    val request = FakeRequest(POST, "/addMealSlot")
+    val request = FakeRequest(POST, "/deleteMealSlot")
       .withSession("USERID" -> "1")
       .withHeaders("Content-type" -> "application/json")
       .withBody(jsonBody)
 
     val result = controller.deleteMealSlot().apply(request)
 
-    val actual = contentAsString(result)
-    actual shouldBe "Meal successfully deleted."
+    status(result) shouldBe OK
+    contentAsString(result) shouldBe "Meal successfully deleted."
+  }
+
+  behavior of "updateMealSlot"
+
+  it should "return an Ok response, stating meal has successfully been updated" in {
+
+    when(databaseMock.updateMealSlot("1", updateMealSlotExample))
+      .thenReturn(Future.successful(1))
+
+    val jsonBody = Json.parse(
+      """{
+        |  "date": "2023-01-30",
+        |  "mealNum": 1,
+        |  "oldRecipeId": 1,
+        |  "newRecipeId": 2
+        |}""".stripMargin
+    )
+
+    val request = FakeRequest(POST, "/updateMealSlot")
+      .withSession("USERID" -> "1")
+      .withHeaders("Content-type" -> "application/json")
+      .withBody(jsonBody)
+
+    val result = controller.updateMealSlot().apply(request)
+
+    status(result) shouldBe OK
+    contentAsString(result) shouldBe "Meal successfully updated."
+  }
+
+  it should "return a BadRequest, stating error in Json data" in {
+    val invalidJsonBody = Json.parse(
+      """{
+        |  "date": "2023-01-30",
+        |  "mealNum": 1,
+        |  "oldRecipeId": 1
+        |}""".stripMargin
+    )
+
+    val request = FakeRequest(POST, "/updateMealSlot")
+      .withSession("USERID" -> "1")
+      .withHeaders("Content-type" -> "application/json")
+      .withBody(invalidJsonBody)
+
+
+    val result = controller.updateMealSlot().apply(request)
+
+    status(result) shouldBe BAD_REQUEST
+    contentAsString(result) shouldBe "Error in processing Json data in request body."
   }
 }

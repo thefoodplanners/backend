@@ -13,7 +13,7 @@ import scala.concurrent.{ ExecutionContext, Future }
  * This controller handles HTTP requests dealing with recipes.
  */
 @Singleton
-class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, imageDao: ImageDao)
+class CalendarController @Inject()(cc: ControllerComponents, database: CalendarDao, imageDao: ImageDao)
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
@@ -130,9 +130,8 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
         Json.fromJson[ReceivedMealSlot](request.body)
           .asOpt
           .map { mealSlot =>
-            val mealSlotWithUserId = mealSlot.copy(userId = userId)
             database
-              .addMealSlot(mealSlotWithUserId)
+              .addMealSlot(userId, mealSlot)
               .map(primaryKeyOpt =>
                 primaryKeyOpt
                   .map(_ => Ok("Meal successfully added."))
@@ -159,14 +158,35 @@ class RecipeController @Inject()(cc: ControllerComponents, database: RecipeDao, 
         Json.fromJson[ReceivedMealSlot](request.body)
           .asOpt
           .map { mealSlot =>
-            val mealSlotWithUserId = mealSlot.copy(userId = userId)
             database
-              .deleteMealSlot(mealSlotWithUserId)
-              .map(numOfRows =>
-                if (numOfRows == 0) InternalServerError("No rows deleted.")
-                else if (numOfRows == 1) Ok("Meal successfully deleted.")
+              .deleteMealSlot(userId, mealSlot)
+              .map(rowsAffected =>
+                if (rowsAffected == 0) InternalServerError("No rows deleted.")
+                else if (rowsAffected == 1) Ok("Meal successfully deleted.")
                 else InternalServerError("More than 1 row deleted.")
               )
+          }
+          .getOrElse {
+            Future.successful(BadRequest("Error in processing Json data in request body."))
+          }
+      }
+      .getOrElse {
+        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+      }
+  }
+
+  def updateMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
+    request.session
+      .get(SESSION_KEY)
+      .map { userId =>
+        Json.fromJson[UpdateMealSlot](request.body)
+          .asOpt
+          .map { updateMealSlot =>
+            database.updateMealSlot(userId, updateMealSlot).map { rowsAffected =>
+              if (rowsAffected == 0) InternalServerError("No rows were updated.")
+              else if (rowsAffected == 1) Ok("Meal successfully updated.")
+              else InternalServerError("More than 1 row updated.")
+            }
           }
           .getOrElse {
             Future.successful(BadRequest("Error in processing Json data in request body."))

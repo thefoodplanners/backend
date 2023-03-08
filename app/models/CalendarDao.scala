@@ -8,7 +8,7 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
 
-class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
+class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
 
   private val recipeParser = (
     SqlParser.int("recipeId") ~
@@ -85,18 +85,18 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
     }(databaseExecutionContext)
   }
 
-  def addMealSlot(mealSlot: ReceivedMealSlot): Future[Option[Long]] = {
+  def addMealSlot(userId: String, mealSlot: ReceivedMealSlot): Future[Option[Long]] = {
     Future {
       db.withConnection { implicit conn =>
           SQL"""
                 INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
-                VALUES (${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipeId}, ${mealSlot.userId});
+                VALUES (${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipeId}, $userId);
              """.executeInsert()
       }
     }(databaseExecutionContext)
   }
 
-  def deleteMealSlot(mealSlot: ReceivedMealSlot): Future[Int] = {
+  def deleteMealSlot(userId: String, mealSlot: ReceivedMealSlot): Future[Int] = {
     Future {
       db.withConnection { implicit conn =>
         SQL"""
@@ -104,8 +104,23 @@ class RecipeDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
               WHERE Date = ${mealSlot.date} AND
               Meal_Number = ${mealSlot.mealNum} AND
               RecipeID = ${mealSlot.recipeId} AND
-              UserID = ${mealSlot.userId}
+              UserID = $userId
              """.executeUpdate()
+      }
+    }(databaseExecutionContext)
+  }
+
+  def updateMealSlot(userId: String, updateMealSlot: UpdateMealSlot): Future[Int] = {
+    Future {
+      db.withConnection { implicit conn =>
+        SQL"""
+            UPDATE Meal_Slot
+            SET RecipeID = ${updateMealSlot.newRecipeId}
+            WHERE Date = ${updateMealSlot.date} AND
+            Meal_Number = ${updateMealSlot.mealNum} AND
+            RecipeID = ${updateMealSlot.oldRecipeId} AND
+            UserID = $userId
+           """.executeUpdate()
       }
     }(databaseExecutionContext)
   }
