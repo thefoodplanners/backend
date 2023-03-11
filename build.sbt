@@ -1,11 +1,12 @@
 lazy val root = (project in file("."))
   .enablePlugins(PlayScala)
   .settings(
-    name := """play-food-planner-app""",
+    name := "FoodGen-backend",
     version := "1.0-SNAPSHOT",
     scalaVersion := "2.13.10",
     libraryDependencies ++= Seq(
       jdbc,
+      jdbc % Test,
       guice,
       "org.playframework.anorm" %% "anorm" % "2.7.0",
       "mysql" % "mysql-connector-java" % "8.0.32",

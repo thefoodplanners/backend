@@ -7,7 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatestplus.mockito.MockitoSugar.mock
-import play.api.http.Status.{ BAD_REQUEST, OK }
+import play.api.http.Status.OK
 import play.api.libs.json.Json
 import play.api.test.Helpers.{ POST, contentAsString, defaultAwaitTimeout, status }
 import play.api.test.{ FakeRequest, Helpers }

@@ -8,12 +8,18 @@ import play.api.mvc._
 import java.io.File
 import javax.inject._
 import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.Random
 
 /**
  * This controller handles HTTP requests dealing with recipes.
  */
 @Singleton
-class CalendarController @Inject()(cc: ControllerComponents, database: CalendarDao, imageDao: ImageDao)
+class CalendarController @Inject()(
+  cc: ControllerComponents,
+  database: CalendarDao,
+  imageDao: ImageDao,
+  databaseUser: UserDao
+)
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
@@ -54,6 +60,61 @@ class CalendarController @Inject()(cc: ControllerComponents, database: CalendarD
       }
   }
 
+  def generateWeeklyMealPlan: Action[AnyContent] = Action.async { request =>
+    request.session
+      .get(SESSION_KEY)
+      .map { userId =>
+        databaseUser.fetchMaxCalories(userId).flatMap { maxCalories =>
+          database.fetchRecommendations(userId.toInt).map { recipes =>
+            val recipesByMealType = recipes.groupBy(_.mealType)
+            val weeklyMeal = Seq.tabulate(7) { _ =>
+              val rand = Random
+              val pick = rand.nextInt(3)
+              pick match {
+                case 0 => dayMealPlan(recipesByMealType, maxCalories, "Breakfast", rand)
+                case 1 => dayMealPlan(recipesByMealType, maxCalories, "Lunch", rand)
+                case 2 => dayMealPlan(recipesByMealType, maxCalories, "Dinner", rand)
+              }
+            }
+
+            Ok(Json.toJson(weeklyMeal))
+          }
+        }
+      }
+      .getOrElse {
+        Future.successful(Unauthorized("Sorry buddy, not allowed in"))
+      }
+  }
+
+  private def dayMealPlan(
+    recipesByMealType: Map[String, Seq[Recipe]],
+    maxCalories: Int,
+    lastMealType: String,
+    rand: Random
+  ): Seq[Recipe] = {
+    val mealTypes = Seq("Breakfast", "Lunch", "Dinner")
+
+    val randomRecipes = mealTypes
+      .filterNot(_ == lastMealType)
+      .map(mealType => getRandomElem(recipesByMealType(mealType), rand))
+
+    val caloriesLeft = maxCalories - randomRecipes.map(_.calories).sum
+    val lastRecipe = getRandomElem(recipesByMealType(lastMealType).filter(_.calories <= caloriesLeft), rand)
+
+
+    (randomRecipes :+ lastRecipe).sortBy { recipe =>
+      recipe.mealType match {
+        case "Breakfast" => 0
+        case "Lunch" => 1
+        case "Dinner" => 2
+        case _ => 3
+      }
+    }
+  }
+
+  private def getRandomElem[A](seq: Seq[A], random: Random): A =
+    seq(random.nextInt(seq.length))
+
   /**
    * Action which fetches all the meal slots for a given user in a given week.
    *
@@ -64,7 +125,7 @@ class CalendarController @Inject()(cc: ControllerComponents, database: CalendarD
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        val mealSlotsJson = database.fetchAllMealSlots(userId.toInt, weekDateString).flatMap { mealSlots =>
+        database.fetchAllMealSlots(userId, weekDateString).flatMap { mealSlots =>
           val mealSlotsWithImg = mealSlotImageRefToString(mealSlots.map(_.recipe)).map { recipes =>
             mealSlots.zip(recipes).map { case (mealSlot, recipeWithImg) =>
               mealSlot.copy(recipe = recipeWithImg)
@@ -73,10 +134,9 @@ class CalendarController @Inject()(cc: ControllerComponents, database: CalendarD
 
           mealSlotsWithImg.map { mealSlots =>
             val mealSlotsArray = mealSlotToArray(mealSlots)
-            Json.toJson(mealSlotsArray)
+            Ok(Json.toJson(mealSlotsArray))
           }
         }
-        mealSlotsJson.map(Ok(_))
       }
       .getOrElse {
         Future.successful(Unauthorized("Sorry buddy, not allowed in"))
@@ -149,25 +209,18 @@ class CalendarController @Inject()(cc: ControllerComponents, database: CalendarD
       }
   }
 
-  def deleteMealSlot(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def deleteMealSlot(mealSlotId: Int): Action[JsValue] = Action.async(parse.json) { implicit request =>
     // Fetch user id from session cookie
     request.session
       .get(SESSION_KEY)
       .map { userId =>
         // Convert request body json to case class
-        Json.fromJson[ReceivedMealSlot](request.body)
-          .asOpt
-          .map { mealSlot =>
-            database
-              .deleteMealSlot(userId, mealSlot)
-              .map(rowsAffected =>
-                if (rowsAffected == 0) InternalServerError("No rows deleted.")
-                else if (rowsAffected == 1) Ok("Meal successfully deleted.")
-                else InternalServerError("More than 1 row deleted.")
-              )
-          }
-          .getOrElse {
-            Future.successful(BadRequest("Error in processing Json data in request body."))
+        database
+          .deleteMealSlot(userId, mealSlotId)
+          .map { rowsAffected =>
+            if (rowsAffected == 0) InternalServerError("No rows deleted.")
+            else if (rowsAffected == 1) Ok("Meal successfully deleted.")
+            else InternalServerError("More than 1 row deleted.")
           }
       }
       .getOrElse {
@@ -175,14 +228,14 @@ class CalendarController @Inject()(cc: ControllerComponents, database: CalendarD
       }
   }
 
-  def updateMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
+  def updateMealSlot(mealSlotId: Int): Action[JsValue] = Action.async(parse.json) { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        Json.fromJson[UpdateMealSlot](request.body)
-          .asOpt
-          .map { updateMealSlot =>
-            database.updateMealSlot(userId, updateMealSlot).map { rowsAffected =>
+        (request.body \ "newRecipeId")
+          .asOpt[Int]
+          .map { newRecipeId =>
+            database.updateMealSlot(userId, mealSlotId, newRecipeId).map { rowsAffected =>
               if (rowsAffected == 0) InternalServerError("No rows were updated.")
               else if (rowsAffected == 1) Ok("Meal successfully updated.")
               else InternalServerError("More than 1 row updated.")

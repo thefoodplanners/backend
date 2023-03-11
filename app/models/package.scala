@@ -33,7 +33,7 @@ package object models {
     implicit val formats: OFormat[ReceivedMealSlot] = Json.format[ReceivedMealSlot]
   }
 
-  case class FetchedMealSlot(date: Date, mealNum: Int, recipe: Recipe)
+  case class FetchedMealSlot(mealSlotId: Int, date: Date, mealNum: Int, recipe: Recipe)
 
   object FetchedMealSlot {
     implicit val formats: OFormat[FetchedMealSlot] = Json.format[FetchedMealSlot]

@@ -3,24 +3,28 @@
 # ~~~~
 
 # Calendar endpoints
-GET     /allMeals                   controllers.api.CalendarController.getAllMealSlots(weekDate: String)
-POST    /updateMealSlot             controllers.api.CalendarController.updateMealSlot()
-POST    /addMealSlot                controllers.api.CalendarController.addMealSlot()
-DELETE  /deleteMealSlot             controllers.api.CalendarController.deleteMealSlot()
-GET     /recommendMeals             controllers.api.CalendarController.getRecommendations
+GET     /calendar/meals                     controllers.api.CalendarController.getAllMealSlots(weekDate: String)
+POST    /calendar/meals                     controllers.api.CalendarController.addMealSlot()
+PUT     /calendar/meals/:mealSlotId         controllers.api.CalendarController.updateMealSlot(mealSlotId: Int)
+DELETE  /calendar/meals/:mealSlotId         controllers.api.CalendarController.deleteMealSlot(mealSlotId: Int)
+GET     /calendar/meals/recommendation      controllers.api.CalendarController.getRecommendations
+GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.generateWeeklyMealPlan
+
+# Search endpoints
+GET     /search                             controllers.api.SearchController.searchForRecipes(query: String)
 
 # Login endpoints
-POST    /login                      controllers.api.LoginController.processLogin
-GET     /logout                     controllers.api.LoginController.logout
-POST    /register                   controllers.api.LoginController.register
+POST    /login                              controllers.api.LoginController.processLogin
+GET     /logout                             controllers.api.LoginController.logout
+POST    /register                           controllers.api.LoginController.register
 
 # Recipe endpoints
-GET     /recipe                     controllers.api.CalendarController.getRecipeFromId(userId: Int)
-GET     /recipes                    controllers.api.CalendarController.getAllRecipes
+GET     /recipe                             controllers.api.CalendarController.getRecipeFromId(userId: Int)
+GET     /recipes                            controllers.api.CalendarController.getAllRecipes
 
 # Dev endpoints
-GET     /test                       controllers.api.LoginController.test
-GET     /testImage                  controllers.api.CalendarController.testImage
+GET     /test                               controllers.api.LoginController.test
+GET     /test-image                         controllers.api.CalendarController.testImage
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.versioned(file)
+GET     /assets/*file                       controllers.Assets.versioned(file)

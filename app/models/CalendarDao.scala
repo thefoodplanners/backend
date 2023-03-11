@@ -40,12 +40,13 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
   }
 
   private val mealSlotParser = (
+    SqlParser.int("Meal_SlotID") ~
     SqlParser.date("Date") ~
       SqlParser.int("Meal_Number") ~
       recipeParser
     ) map {
-    case date ~ mealNum ~ recipe =>
-      FetchedMealSlot(date, mealNum, recipe)
+    case mealSlotId ~ date ~ mealNum ~ recipe =>
+      FetchedMealSlot(mealSlotId, date, mealNum, recipe)
   }
 
   def fetchRecipe(recipeId: Int): Future[Recipe] = {
@@ -96,36 +97,32 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
-  def deleteMealSlot(userId: String, mealSlot: ReceivedMealSlot): Future[Int] = {
+  def deleteMealSlot(userId: String, mealSlotId: Int): Future[Int] = {
     Future {
       db.withConnection { implicit conn =>
         SQL"""
               DELETE FROM Meal_Slot
-              WHERE Date = ${mealSlot.date} AND
-              Meal_Number = ${mealSlot.mealNum} AND
-              RecipeID = ${mealSlot.recipeId} AND
-              UserID = $userId
+              WHERE Meal_SlotID = $mealSlotId AND
+              UserID = $userId;
              """.executeUpdate()
       }
     }(databaseExecutionContext)
   }
 
-  def updateMealSlot(userId: String, updateMealSlot: UpdateMealSlot): Future[Int] = {
+  def updateMealSlot(userId: String, mealSlotId: Int, newRecipeId: Int): Future[Int] = {
     Future {
       db.withConnection { implicit conn =>
         SQL"""
             UPDATE Meal_Slot
-            SET RecipeID = ${updateMealSlot.newRecipeId}
-            WHERE Date = ${updateMealSlot.date} AND
-            Meal_Number = ${updateMealSlot.mealNum} AND
-            RecipeID = ${updateMealSlot.oldRecipeId} AND
-            UserID = $userId
+            SET RecipeID = $newRecipeId
+            WHERE Meal_SlotID = $mealSlotId AND
+            UserID = $userId;
            """.executeUpdate()
       }
     }(databaseExecutionContext)
   }
 
-  def fetchAllMealSlots(userId: Int, weekDateString: String): Future[Seq[FetchedMealSlot]] = {
+  def fetchAllMealSlots(userId: String, weekDateString: String): Future[Seq[FetchedMealSlot]] = {
     Future {
       db.withConnection { implicit conn =>
         val weekDate: LocalDate = LocalDate.parse(weekDateString)
@@ -155,23 +152,23 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
   def fetchRecommendations(userId: Int): Future[Seq[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
-        val allRows =
-          SQL"""SELECT RecipeID, Name, Type, Description, Time, Difficulty, Ingredients, Calories,
+        SQL"""
+              SELECT RecipeID, Name, Type, Description, Time, Difficulty, Ingredients, Calories,
                 Fats, Proteins, Carbohydrates, R.Vegan, R.Vegetarian, R.Keto, R.Lactose, R.Halal,
                 R.Kosher, R.Dairy_free, R.Low_carbs, image
-               FROM Recipe R
-               INNER JOIN Preferences P ON
-                   P.UserID = $userId AND
-                   (R.Vegan OR (NOT P.Vegan)) AND
-                   (R.Vegetarian OR (NOT P.Vegetarian)) AND
-                   (R.Keto OR (NOT P.Keto)) AND
-                   (R.Lactose OR (NOT P.Lactose)) AND
-                   (R.Halal OR (NOT P.Halal)) AND
-                   (R.Kosher OR (NOT P.Kosher)) AND
-                   (R.Dairy_free OR (NOT P.Dairy_free)) AND
-                   (R.Low_carbs OR (NOT P.Low_carbs));
-               """.as(recipeParser.*)
-        allRows
+              FROM Recipe R
+              INNER JOIN Preferences P ON
+                P.UserID = $userId AND
+                (R.Vegan OR (NOT P.Vegan)) AND
+                (R.Vegetarian OR (NOT P.Vegetarian)) AND
+                (R.Keto OR (NOT P.Keto)) AND
+                (R.Lactose OR (NOT P.Lactose)) AND
+                (R.Halal OR (NOT P.Halal)) AND
+                (R.Kosher OR (NOT P.Kosher)) AND
+                (R.Dairy_free OR (NOT P.Dairy_free)) AND
+                (R.Low_carbs OR (NOT P.Low_carbs))
+              ORDER BY RAND();
+             """.as(recipeParser.*)
       }
     }(databaseExecutionContext)
   }
