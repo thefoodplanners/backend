@@ -149,7 +149,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
    * @return List of all the recipes from the database that correspond with the preference
    *         of the user
    */
-  def fetchRecommendations(userId: Int): Future[Seq[Recipe]] = {
+  def fetchRecommendations(userId: String): Future[Seq[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
         SQL"""

@@ -48,7 +48,7 @@ class CalendarController @Inject()(
       .get(SESSION_KEY)
       .map { userId =>
         // Fetch recipes from database and split it into groups of 3.
-        database.fetchRecommendations(userId.toInt).flatMap { recipes =>
+        database.fetchRecommendations(userId).flatMap { recipes =>
           mealSlotImageRefToString(recipes).map { recipesWithImg =>
             val splitRecipes = recipesWithImg.grouped(3).toSeq
             Ok(Json.toJson(splitRecipes))
@@ -65,7 +65,7 @@ class CalendarController @Inject()(
       .get(SESSION_KEY)
       .map { userId =>
         databaseUser.fetchMaxCalories(userId).flatMap { maxCalories =>
-          database.fetchRecommendations(userId.toInt).map { recipes =>
+          database.fetchRecommendations(userId).map { recipes =>
             val recipesByMealType = recipes.groupBy(_.mealType)
             val weeklyMeal = Seq.tabulate(7) { _ =>
               val rand = Random
@@ -181,7 +181,7 @@ class CalendarController @Inject()(
     }
   }
 
-  def addMealSlot(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def addMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
     // Fetch user id from session cookie
     request.session
       .get(SESSION_KEY)
@@ -209,7 +209,7 @@ class CalendarController @Inject()(
       }
   }
 
-  def deleteMealSlot(mealSlotId: Int): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  def deleteMealSlot(mealSlotId: Int): Action[AnyContent] = Action.async { request =>
     // Fetch user id from session cookie
     request.session
       .get(SESSION_KEY)

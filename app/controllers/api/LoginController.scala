@@ -51,7 +51,12 @@ class LoginController @Inject()(
       .map(database.addNewUser)
       .map(_.map { primaryKeyOpt =>
         primaryKeyOpt
-          .map(_ => Ok("User successfully added."))
+          .map {
+            case (1, 1) =>
+              Ok("User successfully added.")
+            case (user, pref) if user != 1 || pref != 1 =>
+              InternalServerError("Row not added correctly.")
+          }
           .getOrElse {
             InternalServerError("Error in adding the user.")
           }

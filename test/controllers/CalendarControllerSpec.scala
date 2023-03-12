@@ -21,8 +21,9 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
 
   val databaseMock: CalendarDao = mock[CalendarDao]
   val imageDaoMock: ImageDao = mock[ImageDao]
+  val userDaoMock: UserDao = mock[UserDao]
 
-  val controller = new CalendarController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock)
+  val controller = new CalendarController(Helpers.stubControllerComponents(), databaseMock, imageDaoMock, userDaoMock)
 
   val recipeExample1: Recipe = Recipe(
     id = 1,
@@ -36,16 +37,7 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
     fats = 1.0f,
     proteins = 1.0f,
     carbohydrates = 1.0f,
-    preferences = Preferences(
-      isVegan = false,
-      isVegetarian = false,
-      isKeto = false,
-      isLactose = false,
-      isHalal = false,
-      isKosher = false,
-      isDairyFree = false,
-      isLowCarbs = false
-    ),
+    preferences = Preferences(),
     imageRef = "imageRef1"
   )
 
@@ -61,22 +53,13 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
     fats = 2.0f,
     proteins = 2.0f,
     carbohydrates = 2.0f,
-    preferences = Preferences(
-      isVegan = false,
-      isVegetarian = false,
-      isKeto = false,
-      isLactose = false,
-      isHalal = false,
-      isKosher = false,
-      isDairyFree = false,
-      isLowCarbs = false
-    ),
+    preferences = Preferences(),
     imageRef = "imageRef2"
   )
 
   val fetchedMealSlotExample: Seq[FetchedMealSlot] = Seq(
-    FetchedMealSlot(LocalDate.parse("2023-01-30").toDate, 1, recipeExample1),
-    FetchedMealSlot(LocalDate.parse("2023-01-30").toDate, 2, recipeExample2)
+    FetchedMealSlot(1, LocalDate.parse("2023-01-30").toDate, 1, recipeExample1),
+    FetchedMealSlot(2, LocalDate.parse("2023-01-30").toDate, 2, recipeExample2)
   )
 
   val receivedMealSlotExample: ReceivedMealSlot =
@@ -87,7 +70,7 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
 
   "mealSlotToArray" should "return the correct 2d array" in {
 
-    when(databaseMock.fetchAllMealSlots(1, "2023-01-02"))
+    when(databaseMock.fetchAllMealSlots("1", "2023-01-02"))
       .thenReturn(Future.successful(fetchedMealSlotExample))
 
     when(imageDaoMock.fetchImages(Seq("imageRef1", "imageRef2")))
@@ -136,23 +119,13 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
 
   "deleteMealSlot" should "return an Ok response, stating meal has successfully been deleted" in {
 
-    when(databaseMock.deleteMealSlot("1", receivedMealSlotExample))
+    when(databaseMock.deleteMealSlot("1", 1))
       .thenReturn(Future.successful(1))
-
-    val jsonBody = Json.parse(
-      """{
-        |  "date": "2023-01-30",
-        |  "mealNum": 1,
-        |  "recipeId": 1
-        |}""".stripMargin
-    )
 
     val request = FakeRequest(POST, "/deleteMealSlot")
       .withSession("USERID" -> "1")
-      .withHeaders("Content-type" -> "application/json")
-      .withBody(jsonBody)
 
-    val result = controller.deleteMealSlot().apply(request)
+    val result = controller.deleteMealSlot(1).apply(request)
 
     status(result) shouldBe OK
     contentAsString(result) shouldBe "Meal successfully deleted."
@@ -162,14 +135,11 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
 
   it should "return an Ok response, stating meal has successfully been updated" in {
 
-    when(databaseMock.updateMealSlot("1", updateMealSlotExample))
+    when(databaseMock.updateMealSlot("1", 1, 2))
       .thenReturn(Future.successful(1))
 
     val jsonBody = Json.parse(
       """{
-        |  "date": "2023-01-30",
-        |  "mealNum": 1,
-        |  "oldRecipeId": 1,
         |  "newRecipeId": 2
         |}""".stripMargin
     )
@@ -179,7 +149,7 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
       .withHeaders("Content-type" -> "application/json")
       .withBody(jsonBody)
 
-    val result = controller.updateMealSlot().apply(request)
+    val result = controller.updateMealSlot(1).apply(request)
 
     status(result) shouldBe OK
     contentAsString(result) shouldBe "Meal successfully updated."
@@ -188,8 +158,6 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
   it should "return a BadRequest, stating error in Json data" in {
     val invalidJsonBody = Json.parse(
       """{
-        |  "date": "2023-01-30",
-        |  "mealNum": 1,
         |  "oldRecipeId": 1
         |}""".stripMargin
     )
@@ -200,7 +168,7 @@ class CalendarControllerSpec extends AnyFlatSpec with MockitoSugar {
       .withBody(invalidJsonBody)
 
 
-    val result = controller.updateMealSlot().apply(request)
+    val result = controller.updateMealSlot(1).apply(request)
 
     status(result) shouldBe BAD_REQUEST
     contentAsString(result) shouldBe "Error in processing Json data in request body."

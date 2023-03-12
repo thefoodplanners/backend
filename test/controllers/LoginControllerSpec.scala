@@ -1,7 +1,7 @@
 package controllers
 
 import controllers.api.LoginController
-import models.{ LoginDao, RegisterData }
+import models.{ LoginDao, Preferences, RegisterData }
 import org.mockito.Mockito.when
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.must.Matchers
@@ -22,18 +22,30 @@ class LoginControllerSpec extends AnyFlatSpec with Matchers {
 
   val controller = new LoginController(Helpers.stubControllerComponents(), databaseMock)
 
+  val preferences: Preferences = Preferences()
+
   val registerDataExample: RegisterData =
-    RegisterData("email1", "username1", "password1")
+    RegisterData("email1", "username1", "password1", preferences)
 
   "register" should "return an Ok response, stating the user has been added" in {
     when(databaseMock.addNewUser(registerDataExample))
-      .thenReturn(Future.successful(Some(1)))
+      .thenReturn(Future.successful(Some(1, 1)))
 
     val jsonBody = Json.parse(
       """{
         |  "email": "email1",
         |  "username": "username1",
-        |  "password": "password1"
+        |  "password": "password1",
+        |  "preferences": {
+        |    "isVegan": false,
+        |    "isVegetarian": false,
+        |    "isKeto": false,
+        |    "isLactose": false,
+        |    "isHalal": false,
+        |    "isKosher": false,
+        |    "isDairyFree": false,
+        |    "isLowCarbs": false
+        |  }
         |}""".stripMargin
     )
 

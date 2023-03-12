@@ -18,9 +18,14 @@ package object models {
   }
 
   case class Preferences(
-    isVegan: Boolean, isVegetarian: Boolean, isKeto: Boolean,
-    isLactose: Boolean, isHalal: Boolean, isKosher: Boolean,
-    isDairyFree: Boolean, isLowCarbs: Boolean
+    isVegan: Boolean = false,
+    isVegetarian: Boolean = false,
+    isKeto: Boolean = false,
+    isLactose: Boolean = false,
+    isHalal: Boolean = false,
+    isKosher: Boolean = false,
+    isDairyFree: Boolean = false,
+    isLowCarbs: Boolean = false
   )
 
   object Preferences {
@@ -51,7 +56,7 @@ package object models {
     implicit val formats: OFormat[LoginData] = Json.format[LoginData]
   }
 
-  case class RegisterData(email: String, username: String, password: String)
+  case class RegisterData(email: String, username: String, password: String, preferences: Preferences)
 
   object RegisterData {
     implicit val formats: OFormat[RegisterData] = Json.format[RegisterData]

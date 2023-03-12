@@ -29,13 +29,29 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
     }(databaseExecutionContext)
   }
 
-  def addNewUser(registerData: RegisterData): Future[Option[Long]] = {
+  def addNewUser(registerData: RegisterData): Future[Option[(Long, Long)]] = {
     Future {
       db.withConnection { implicit conn =>
-        SQL"""
+        val usersInsert: Option[Long] = SQL"""
              INSERT INTO Users(Username, Password, Email)
              VALUES (${registerData.username}, ${registerData.password}, ${registerData.email});
            """.executeInsert()
+
+        val preferences = registerData.preferences
+
+        val prefInsert: Option[Long] = SQL"""
+             INSERT INTO Preferences(UserID, Vegan, Vegetarian,
+             Keto, Lactose, Halal, Kosher, Dairy_free, Low_carbs,
+             Gluten_free, Peanuts, Eggs, Fish, Tree_nuts, Soy, Max_Calories)
+             VALUES (${preferences.isVegan}, ${preferences.isVegetarian},
+             ${preferences.isKeto}, ${preferences.isLactose}, ${preferences.isHalal},
+             ${preferences.isKosher}, ${preferences.isDairyFree}, ${preferences.isLowCarbs});
+           """.executeInsert()
+
+        for {
+          user <- usersInsert
+          pref <- prefInsert
+        } yield (user, pref)
       }
     }(databaseExecutionContext)
   }
