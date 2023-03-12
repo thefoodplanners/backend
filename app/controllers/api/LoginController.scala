@@ -55,7 +55,7 @@ class LoginController @Inject()(
             case (1, 1) =>
               Ok("User successfully added.")
             case (user, pref) if user != 1 || pref != 1 =>
-              InternalServerError("Row not added correctly.")
+              InternalServerError("Error. Row not added correctly.")
           }
           .getOrElse {
             InternalServerError("Error in adding the user.")

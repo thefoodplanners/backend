@@ -11,7 +11,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Random
 
 /**
- * This controller handles HTTP requests dealing with recipes.
+ * This controller handles HTTP requests dealing with the calendar.
  */
 @Singleton
 class CalendarController @Inject()(
@@ -22,20 +22,6 @@ class CalendarController @Inject()(
 )
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
-
-  def getAllRecipes: Action[AnyContent] = Action.async {
-    val recipesJsonString = database.fetchAllRecipes.map { recipes =>
-      Json.stringify(Json.obj("recipes" -> recipes))
-    }
-    recipesJsonString.map(Ok(_))
-  }
-
-  def getRecipeFromId(recipeId: Int): Action[AnyContent] = Action.async {
-    val recipeJsonString = database.fetchRecipe(recipeId).map { recipe =>
-      Json.stringify(Json.obj("recipe" -> recipe))
-    }
-    recipeJsonString.map(Ok(_))
-  }
 
   /**
    * Action which fetches all the recommended recipes for a given user.

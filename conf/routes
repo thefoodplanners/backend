@@ -13,14 +13,13 @@ GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.g
 # Search endpoints
 GET     /search                             controllers.api.SearchController.searchForRecipes(query: String)
 
+# Progress Chart endpoints
+GET     /chart/:dateType/:date/calories     controllers.api.ProgressChartController.getWeeklyCalories(dateType: String, date: String)
+
 # Login endpoints
 POST    /login                              controllers.api.LoginController.processLogin
 GET     /logout                             controllers.api.LoginController.logout
 POST    /register                           controllers.api.LoginController.register
-
-# Recipe endpoints
-GET     /recipe                             controllers.api.CalendarController.getRecipeFromId(userId: Int)
-GET     /recipes                            controllers.api.CalendarController.getAllRecipes
 
 # Dev endpoints
 GET     /test                               controllers.api.LoginController.test

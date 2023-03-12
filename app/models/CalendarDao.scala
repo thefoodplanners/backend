@@ -8,6 +8,9 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
 
+/**
+ * DAO class for accessing the SQL database relating to calendar queries.
+ */
 class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
 
   private val recipeParser = (
@@ -41,7 +44,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
 
   private val mealSlotParser = (
     SqlParser.int("Meal_SlotID") ~
-    SqlParser.date("Date") ~
+      SqlParser.date("Date") ~
       SqlParser.int("Meal_Number") ~
       recipeParser
     ) map {
@@ -49,47 +52,17 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
       FetchedMealSlot(mealSlotId, date, mealNum, recipe)
   }
 
-  def fetchRecipe(recipeId: Int): Future[Recipe] = {
-    Future {
-      db.withConnection { implicit conn =>
-        val allRows =
-          SQL"""SELECT * FROM recipe
-               WHERE RecipeID = $recipeId;""".as(recipeParser.single)
-        allRows
-      }
-    }(databaseExecutionContext)
-  }
-
-  def fetchAllRecipes: Future[Seq[Recipe]] = {
-    Future {
-      db.withConnection { implicit conn =>
-        val allRows = SQL"""SELECT * FROM recipe;""".as(recipeParser.*)
-        allRows
-      }
-    }(databaseExecutionContext)
-  }
-
-  def addRecipe(recipe: Recipe): Future[Option[Long]] = {
-    Future {
-      db.withConnection { implicit conn =>
-        val allRows =
-          SQL"""INSERT INTO Recipe(Name, Type, Description, Time, Difficulty,
-               Ingredients, Calories, Fats, Proteins, Carbohydrates, UserID,
-               Vegan, Vegetarian, Keto, Lactose, Halal, Kosher, Dairy_free,
-               Low_carbs, Gluten_free)
-               VALUES (${recipe.name}, ${recipe.mealType}, ${recipe.desc}, ${recipe.time},
-               ${recipe.difficulty}, ${recipe.ingredients}, ${recipe.calories}, ${recipe.fats},
-               ${recipe.proteins}, ${recipe.carbohydrates}, ${recipe.preferences.isVegan});
-             """.executeInsert()
-        allRows
-      }
-    }(databaseExecutionContext)
-  }
-
+  /**
+   * Adds the given meal slot to the database.
+   *
+   * @param userId   Id of the user.
+   * @param mealSlot Meal slot to be added.
+   * @return The generated primary key of the added meal slot.
+   */
   def addMealSlot(userId: String, mealSlot: ReceivedMealSlot): Future[Option[Long]] = {
     Future {
       db.withConnection { implicit conn =>
-          SQL"""
+        SQL"""
                 INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
                 VALUES (${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipeId}, $userId);
              """.executeInsert()
@@ -97,6 +70,13 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
+  /**
+   * Deletes the meal slot from the database given the meal slot id.
+   *
+   * @param userId     Id of the user.
+   * @param mealSlotId Id of the meal slot.
+   * @return How many rows (meal slots) were affected by the deletion in the database. Should be 1.
+   */
   def deleteMealSlot(userId: String, mealSlotId: Int): Future[Int] = {
     Future {
       db.withConnection { implicit conn =>
@@ -109,6 +89,14 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
+  /**
+   * Updates the meal slot in the database given the meal slot id with a new recipe id.
+   *
+   * @param userId      Id of the user.
+   * @param mealSlotId  Id of the meal slot to be updated.
+   * @param newRecipeId Id of the new recipe to be added.
+   * @return How may rows (meal slots) were affected by the update in the database. Should be 1.
+   */
   def updateMealSlot(userId: String, mealSlotId: Int, newRecipeId: Int): Future[Int] = {
     Future {
       db.withConnection { implicit conn =>
@@ -122,21 +110,24 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
-  def fetchAllMealSlots(userId: String, weekDateString: String): Future[Seq[FetchedMealSlot]] = {
+  /**
+   * Fetches all the meal slots for a given week and given user.
+   *
+   * @param userId   The id of the user.
+   * @param weekDate Date corresponding to the Monday of the given week.
+   * @return List of all the meal slots for that given week and given user.
+   */
+  def fetchAllMealSlots(userId: String, weekDate: String): Future[Seq[FetchedMealSlot]] = {
     Future {
       db.withConnection { implicit conn =>
-        val weekDate: LocalDate = LocalDate.parse(weekDateString)
-
-        val allMealSlotRows: Seq[FetchedMealSlot] = {
-          SQL"""
-                SELECT *
-                FROM Meal_Slot ms
-                INNER JOIN Recipe r ON ms.RecipeId = r.RecipeId
-                WHERE ms.UserID = $userId
-                AND Date BETWEEN ${weekDate.toString} AND ${weekDate.withDayOfWeek(7).toString};
-                """.as(mealSlotParser.*)
-        }
-        allMealSlotRows
+        val weekLocalDate: LocalDate = LocalDate.parse(weekDate)
+        SQL"""
+              SELECT *
+              FROM Meal_Slot ms
+              INNER JOIN Recipe r ON ms.RecipeId = r.RecipeId
+              WHERE ms.UserID = $userId
+              AND Date BETWEEN ${weekLocalDate.toString} AND ${weekLocalDate.withDayOfWeek(7).toString};
+              """.as(mealSlotParser.*)
       }
     }(databaseExecutionContext)
   }
@@ -145,7 +136,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
    * Fetch all the recipes from the database that correspond with the preference
    * of the user.
    *
-   * @param userId Id of the user requesting the query.
+   * @param userId Id of the user.
    * @return List of all the recipes from the database that correspond with the preference
    *         of the user
    */
