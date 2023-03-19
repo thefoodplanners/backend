@@ -9,15 +9,16 @@ import scala.concurrent.ExecutionContext
 
 class SearchController @Inject()(
   cc: ControllerComponents,
-  database: SearchDao
+  database: SearchDao,
+  calendarController: CalendarController
 )
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
   def searchForRecipes(query: String): Action[AnyContent] = Action.async {
     database.searchForRecipes(query)
-      .map(recipes => Json.toJson(recipes))
-      .map(Ok(_))
+      .flatMap(calendarController.mealSlotImageRefToString)
+      .map(recipesWithImg => Ok(Json.toJson(recipesWithImg)))
   }
 
 }

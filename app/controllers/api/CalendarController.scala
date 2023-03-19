@@ -129,7 +129,7 @@ class CalendarController @Inject()(
       }
   }
 
-  private def mealSlotImageRefToString(recipes: Seq[Recipe]): Future[Seq[Recipe]] = {
+  def mealSlotImageRefToString(recipes: Seq[Recipe]): Future[Seq[Recipe]] = {
     val imageRefs: Seq[String] = recipes.map(_.imageRef)
 
     imageDao.fetchImages(imageRefs).map { _ =>
@@ -214,22 +214,15 @@ class CalendarController @Inject()(
       }
   }
 
-  def updateMealSlot(mealSlotId: Int): Action[JsValue] = Action.async(parse.json) { request =>
+  def updateMealSlot(mealSlotId: Int, newRecipeId: Int): Action[JsValue] = Action.async(parse.json) { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        (request.body \ "newRecipeId")
-          .asOpt[Int]
-          .map { newRecipeId =>
-            database.updateMealSlot(userId, mealSlotId, newRecipeId).map { rowsAffected =>
-              if (rowsAffected == 0) InternalServerError("No rows were updated.")
-              else if (rowsAffected == 1) Ok("Meal successfully updated.")
-              else InternalServerError("More than 1 row updated.")
-            }
-          }
-          .getOrElse {
-            Future.successful(BadRequest("Error in processing Json data in request body."))
-          }
+        database.updateMealSlot(userId, mealSlotId, newRecipeId).map { rowsAffected =>
+          if (rowsAffected == 0) InternalServerError("No rows were updated.")
+          else if (rowsAffected == 1) Ok("Meal successfully updated.")
+          else InternalServerError("More than 1 row updated.")
+        }
       }
       .getOrElse {
         Future.successful(Unauthorized("Sorry buddy, not allowed in."))

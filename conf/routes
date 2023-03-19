@@ -3,27 +3,145 @@
 # ~~~~
 
 # Calendar endpoints
+
+###
+#  summary: Fetch meal slots for given user.
+#  responses:
+#    200:
+#      description: 2D array of meal slots.
+#      schema:
+#        $ref: '#/definitions/models.FetchedMealSlot'
+#    401:
+#      description: Not logged in.
+###
 GET     /calendar/meals                     controllers.api.CalendarController.getAllMealSlots(weekDate: String)
+
+###
+#  summary: Add new meal slot to calendar.
+#  responses:
+#    200:
+#    description: Meal slot successfully created.
+#    401:
+#      description: Not logged in.
+#  parameters:
+#    - name: body
+#      schema:
+#        $ref: '#/definitions/models.ReceivedMealSlot'
+###
 POST    /calendar/meals                     controllers.api.CalendarController.addMealSlot()
-PUT     /calendar/meals/:mealSlotId         controllers.api.CalendarController.updateMealSlot(mealSlotId: Int)
+
+###
+#  summary: Update an existing meal slot with a new recipe.
+#  responses:
+#    200:
+#      description: Meal slot successfully updated.
+#    500:
+#      description: Either 0 or more than 1 row was updated.
+#    401:
+#      description: Not logged in.
+###
+PUT     /calendar/meals/:mealSlotId         controllers.api.CalendarController.updateMealSlot(mealSlotId: Int, newRecipeId: Int)
+
+
+###
+#  summary: Delete an existing meal slot.
+#  responses:
+#    200:
+#      description: Meal slot successfully deleted.
+#    500:
+#      description: Either 0 or more than 1 row was deleted.
+#    401:
+#      description: Not logged in.
+###
 DELETE  /calendar/meals/:mealSlotId         controllers.api.CalendarController.deleteMealSlot(mealSlotId: Int)
+
+###
+#  summary: Produces list of recipes recommended for the given user.
+#  responses:
+#    200:
+#      description: List of recommended recipes.
+#    401:
+#      description: Not logged in.
+###
 GET     /calendar/meals/recommendation      controllers.api.CalendarController.getRecommendations
+
+###
+#  summary: Produces a generated 2D array of meal slots based on user preferences.
+#  responses:
+#    200:
+#      description: 2D array of meal slots.
+#    401:
+#      description: Not logged in.
+###
 GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.generateWeeklyMealPlan
 
 # Search endpoints
+
+###
+#  summary: Returns list of recipes which fit the query.
+#  responses:
+#    200:
+#      description: List of recipes which fit the query.
+###
 GET     /search                             controllers.api.SearchController.searchForRecipes(query: String)
 
 # Progress Chart endpoints
+
+###
+#  summary: Fetch calories consumed by the user for a given time period. Week, Month, etc.
+#  responses:
+#    200:
+#      description: Calories consumed by the user for a given time period.
+#    401:
+#      description: Not logged in.
+###
 GET     /chart/:dateType/:date/calories     controllers.api.ProgressChartController.getWeeklyCalories(dateType: String, date: String)
 
 # Login endpoints
+
+###
+#  summary: Login.
+#  responses:
+#    200:
+#      description: Successfully logged in.
+#  parameters:
+#    - name: body
+#      schema:
+#        $ref: '#/definitions/models.LoginData'
+###
 POST    /login                              controllers.api.LoginController.processLogin
+
+###
+#  summary: Logout.
+#  responses:
+#    200:
+#      description: Successfully logged out.
+###
 GET     /logout                             controllers.api.LoginController.logout
+
+###
+#  summary: Register new user.
+#  responses:
+#    200:
+#      description: success
+#  parameters:
+#    - name: body
+#      schema:
+#        $ref: '#/definitions/models.RegisterData'
+###
 POST    /register                           controllers.api.LoginController.register
 
 # Dev endpoints
+
+### NoDocs ###
 GET     /test                               controllers.api.LoginController.test
+
+### NoDocs ###
 GET     /test-image                         controllers.api.CalendarController.testImage
 
 # Map static resources from the /public folder to the /assets URL path
+### NoDocs ###
 GET     /assets/*file                       controllers.Assets.versioned(file)
+
+### NoDocs ###
+GET   /docs/swagger-ui/*file        controllers.Assets.at(path:String="/public/swagger", file:String)

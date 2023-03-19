@@ -44,7 +44,7 @@ class SearchDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecut
       db.withConnection { implicit conn =>
         val queryWithWildcard: String = s"%$query%"
         SQL"""
-             SELECT * FROM recipe
+             SELECT * FROM Recipe
              WHERE Name LIKE $queryWithWildcard;
              """.as(recipeParser.*)
       }

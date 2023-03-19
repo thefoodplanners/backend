@@ -7,9 +7,18 @@ package object models {
   val IMAGES_PATH = "./public/images"
 
   case class Recipe(
-    id: Int, name: String, mealType: String, desc: String, time: Int,
-    difficulty: String, ingredients: String, calories: Int, fats: Float,
-    proteins: Float, carbohydrates: Float, preferences: Preferences,
+    id: Int,
+    name: String,
+    mealType: String,
+    desc: String,
+    time: Int,
+    difficulty: String,
+    ingredients: String,
+    calories: Int,
+    fats: Float,
+    proteins: Float,
+    carbohydrates: Float,
+    preferences: Preferences,
     imageRef: String
   )
 
