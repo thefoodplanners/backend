@@ -67,8 +67,11 @@ class LoginController @Inject()(
       }
   }
 
-  def test: Action[AnyContent] = Action {
-    Ok(Json.obj("test" -> "ing"))
+  def test: Action[AnyContent] = Action { request =>
+    request.session
+      .get(SESSION_KEY)
+      .map(_ => Ok("true"))
+      .getOrElse(Ok("false"))
   }
 
 }
