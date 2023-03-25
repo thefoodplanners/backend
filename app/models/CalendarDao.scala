@@ -62,9 +62,16 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
   def addMealSlot(userId: String, mealSlot: ReceivedMealSlot): Future[Option[Long]] = {
     Future {
       db.withConnection { implicit conn =>
+        val nextMealNum: Int =
+          SQL"""
+            SELECT MAX(Meal_Number) FROM Meal_Slot
+            WHERE Date = ${mealSlot.date} AND
+            UserID = $userId;
+             """.as(SqlParser.scalar[Int].single)
+
         SQL"""
                 INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
-                VALUES (${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipeId}, $userId);
+                VALUES (${mealSlot.date}, ${nextMealNum + 1}, ${mealSlot.recipeId}, $userId);
              """.executeInsert()
       }
     }(databaseExecutionContext)
