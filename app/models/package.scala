@@ -41,6 +41,12 @@ package object models {
     implicit val formats: OFormat[Preferences] = Json.format[Preferences]
   }
 
+  case class MealSlot(mealSlotId: Int, recipe: Recipe)
+
+  object MealSlot {
+    implicit val formats: OFormat[MealSlot] = Json.format[MealSlot]
+  }
+
   case class ConsumedCalories(date: Date, caloriesConsumed: Int)
 
   object ConsumedCalories {

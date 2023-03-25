@@ -43,7 +43,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
   }
 
   private val mealSlotParser = (
-    SqlParser.int("Meal_SlotID") ~
+    SqlParser.int("TimetableID") ~
       SqlParser.date("Date") ~
       SqlParser.int("Meal_Number") ~
       recipeParser
@@ -82,7 +82,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
       db.withConnection { implicit conn =>
         SQL"""
               DELETE FROM Meal_Slot
-              WHERE Meal_SlotID = $mealSlotId AND
+              WHERE TimetableID = $mealSlotId AND
               UserID = $userId;
              """.executeUpdate()
       }
@@ -103,7 +103,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
         SQL"""
             UPDATE Meal_Slot
             SET RecipeID = $newRecipeId
-            WHERE Meal_SlotID = $mealSlotId AND
+            WHERE TimetableID = $mealSlotId AND
             UserID = $userId;
            """.executeUpdate()
       }

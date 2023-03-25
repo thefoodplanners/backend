@@ -152,7 +152,7 @@ class CalendarController @Inject()(
    * @param mealSlots List of FetchedMealSlot case class objects.
    * @return A 2D array of mealSlots, with either empty items or a recipe object.
    */
-  private def mealSlotToArray(mealSlots: Seq[FetchedMealSlot]): Seq[Seq[Recipe]] = {
+  private def mealSlotToArray(mealSlots: Seq[FetchedMealSlot]): Seq[Seq[MealSlot]] = {
     val daySlots = mealSlots
       .groupBy { fetchedMealSlot =>
         val dayOfWeekNum = LocalDate.fromDateFields(fetchedMealSlot.date).getDayOfWeek
@@ -162,7 +162,7 @@ class CalendarController @Inject()(
     Seq.tabulate(7) { index =>
       daySlots
         .get(index)
-        .map(_.map(_.recipe))
+        .map(_.map(mealSlot => MealSlot(mealSlot.mealSlotId, mealSlot.recipe)))
         .getOrElse(Seq.empty)
     }
   }
