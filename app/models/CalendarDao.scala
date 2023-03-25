@@ -64,15 +64,15 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
       db.withConnection { implicit conn =>
         val nextMealNum: Int =
           SQL"""
-            SELECT MAX(Meal_Number) FROM Meal_Slot
-            WHERE Date = ${mealSlot.date} AND
-            UserID = $userId;
-             """.as(SqlParser.scalar[Int].single)
+                 SELECT COALESCE(MAX(Meal_Number), 0) FROM Meal_Slot
+                 WHERE Date = ${mealSlot.date} AND
+                 UserID = $userId;
+                 """.as(SqlParser.scalar[Int].single)
 
         SQL"""
-                INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
-                VALUES (${mealSlot.date}, ${nextMealNum + 1}, ${mealSlot.recipeId}, $userId);
-             """.executeInsert()
+              INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
+              VALUES (${mealSlot.date}, ${nextMealNum + 1}, ${mealSlot.recipeId}, $userId);
+              """.executeInsert()
       }
     }(databaseExecutionContext)
   }
@@ -91,7 +91,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
               DELETE FROM Meal_Slot
               WHERE TimetableID = $mealSlotId AND
               UserID = $userId;
-             """.executeUpdate()
+              """.executeUpdate()
       }
     }(databaseExecutionContext)
   }
@@ -108,11 +108,11 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     Future {
       db.withConnection { implicit conn =>
         SQL"""
-            UPDATE Meal_Slot
-            SET RecipeID = $newRecipeId
-            WHERE TimetableID = $mealSlotId AND
-            UserID = $userId;
-           """.executeUpdate()
+               UPDATE Meal_Slot
+               SET RecipeID = $newRecipeId
+               WHERE TimetableID = $mealSlotId AND
+               UserID = $userId;
+               """.executeUpdate()
       }
     }(databaseExecutionContext)
   }
