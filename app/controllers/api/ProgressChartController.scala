@@ -22,6 +22,7 @@ class ProgressChartController @Inject()(
         val localDate = LocalDate.parse(date)
 
         val dateNum = dateType match {
+          case "day" => localDate.getWeekOfWeekyear
           case "week" => localDate.getWeekOfWeekyear
           case "month" => localDate.getMonthOfYear
           case "year" => localDate.getYear

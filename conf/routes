@@ -75,6 +75,18 @@ GET     /calendar/meals/recommendation      controllers.api.CalendarController.g
 ###
 GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.generateWeeklyMealPlan
 
+# User endpoints
+
+###
+#  summary: Fetches the target calories for a given day of the given user.
+#  responses:
+#    200:
+#      description: Target calories value.
+#    401:
+#      description: Not logged in.
+###
+GET     /user/target-calories                  controllers.api.UserController.getTargetCalories
+
 # Search endpoints
 
 ###

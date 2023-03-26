@@ -50,7 +50,7 @@ class CalendarController @Inject()(
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        databaseUser.fetchMaxCalories(userId).flatMap { maxCalories =>
+        databaseUser.fetchTargetCalories(userId).flatMap { maxCalories =>
           database.fetchRecommendations(userId).map { recipes =>
             val recipesByMealType = recipes.groupBy(_.mealType)
             val weeklyMeal = Seq.tabulate(7) { _ =>
