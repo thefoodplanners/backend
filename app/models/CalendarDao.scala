@@ -149,8 +149,16 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
                SELECT TimetableID
                FROM Meal_Slot
                WHERE Date = ${oldMovedMealSlot.date} AND
-               Meal_Number > ${oldMovedMealSlot.mealNum};
+               Meal_Number >= ${oldMovedMealSlot.mealNum};
                """.as(SqlParser.scalar[Int].*)
+
+        oldMeals.foreach { mealSlotId =>
+          SQL"""
+                        UPDATE Meal_Slot
+                        SET Meal_Number = Meal_Number - 1
+                        WHERE TimetableID = $mealSlotId
+                        """.execute()
+        }
 
         val newMeals =
           SQL"""
@@ -159,14 +167,6 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
                 WHERE Date = ${newMovedMealSlot.date} AND
                 Meal_Number >= ${newMovedMealSlot.mealNum};
                 """.as(SqlParser.scalar[Int].*)
-
-        oldMeals.foreach { mealSlotId =>
-          SQL"""
-                UPDATE Meal_Slot
-                SET Meal_Number = Meal_Number - 1
-                WHERE TimetableID = $mealSlotId
-                """.execute()
-        }
 
         newMeals.foreach { mealSlotId =>
           SQL"""

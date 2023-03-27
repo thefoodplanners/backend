@@ -180,6 +180,9 @@ class CalendarController @Inject()(
         val dayOfWeekNum = LocalDate.fromDateFields(fetchedMealSlot.date).getDayOfWeek
         dayOfWeekNum - 1
       }
+      .map { case (dayIndex, fetchedMealSlots) =>
+        (dayIndex, fetchedMealSlots.sortBy(_.mealNum))
+      }
 
     Seq.tabulate(7) { index =>
       daySlots
