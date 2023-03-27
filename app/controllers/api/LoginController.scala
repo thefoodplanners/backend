@@ -49,19 +49,10 @@ class LoginController @Inject()(
     Json.fromJson[RegisterData](request.body)
       .asOpt
       .map(database.addNewUser)
-      .map(_.map { primaryKeyOpt =>
-        primaryKeyOpt
-          .map {
-            case (1, 1) =>
-              Ok("User successfully added.")
-            case (user, pref) if user != 1 || pref != 1 =>
-              InternalServerError("Error. Row not added correctly.")
-          }
-          .getOrElse {
-            InternalServerError("Error in adding the user.")
-          }
-      }
-      )
+      .map(_.map { success =>
+        if (success) Ok("User successfully added.")
+        else InternalServerError("Error. User not added correctly.")
+      })
       .getOrElse {
         Future.successful(BadRequest("Error in processing Json data in request body."))
       }

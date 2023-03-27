@@ -4,7 +4,6 @@ import anorm._
 import org.joda.time.LocalDate
 import play.api.db.Database
 
-import java.util.Date
 import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -14,32 +13,40 @@ import scala.language.postfixOps
  */
 class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
 
-  private val recipeParser = (
-    SqlParser.int("recipeId") ~
-      SqlParser.str("name") ~
-      SqlParser.str("type") ~
-      SqlParser.str("description") ~
-      SqlParser.int("time") ~
-      SqlParser.str("difficulty") ~
-      SqlParser.str("ingredients") ~
-      SqlParser.int("calories") ~
-      SqlParser.float("fats") ~
-      SqlParser.float("proteins") ~
-      SqlParser.float("carbohydrates") ~
-      SqlParser.bool("vegan") ~
-      SqlParser.bool("vegetarian") ~
-      SqlParser.bool("keto") ~
-      SqlParser.bool("lactose") ~
-      SqlParser.bool("halal") ~
-      SqlParser.bool("kosher") ~
-      SqlParser.bool("dairy_free") ~
-      SqlParser.bool("low_carbs") ~
+  val recipeParser: RowParser[Recipe] = (
+    SqlParser.int("RecipeID") ~
+      SqlParser.str("Name") ~
+      SqlParser.str("Type") ~
+      SqlParser.str("Description") ~
+      SqlParser.int("Time") ~
+      SqlParser.str("Difficulty") ~
+      SqlParser.str("Ingredients") ~
+      SqlParser.int("Calories") ~
+      SqlParser.float("Fats") ~
+      SqlParser.float("Proteins") ~
+      SqlParser.float("Carbohydrates") ~
+      SqlParser.bool("Vegan") ~
+      SqlParser.bool("Vegetarian") ~
+      SqlParser.bool("Keto") ~
+      SqlParser.bool("Lactose") ~
+      SqlParser.bool("Halal") ~
+      SqlParser.bool("Kosher") ~
+      SqlParser.bool("Dairy_Free") ~
+      SqlParser.bool("Low_Carbs") ~
+      SqlParser.bool("Gluten_Free") ~
+      SqlParser.bool("Peanuts") ~
+      SqlParser.bool("Eggs") ~
+      SqlParser.bool("Fish") ~
+      SqlParser.bool("Tree_Nuts") ~
+      SqlParser.bool("Soy") ~
       SqlParser.str("image")
     ) map {
     case id ~ name ~ mealType ~ desc ~ time ~ diff ~ ingr ~ cal ~ fats ~ proteins ~
       carbs ~ isVegan ~ isVegetarian ~ isKeto ~ isLactose ~ isHalal ~ isKosher ~
-      isDairyFree ~ isLowCarbs ~ imageRef =>
-      val preferences = Preferences(isVegan, isVegetarian, isKeto, isLactose, isHalal, isKosher, isDairyFree, isLowCarbs)
+      isDairyFree ~ isLowCarbs ~ isGlutenFree ~ isPeanuts ~ isEggs ~ isFish ~
+      isTreeNuts ~ isSoy ~ imageRef =>
+      val preferences = Preferences(isVegan, isVegetarian, isKeto, isLactose, isHalal,
+        isKosher, isDairyFree, isLowCarbs, isGlutenFree, isPeanuts, isEggs, isFish, isTreeNuts, isSoy, None)
       Recipe(id, name, mealType, desc, time, diff, ingr, cal, fats, proteins, carbs, preferences, imageRef)
   }
 
@@ -214,7 +221,8 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
         SQL"""
               SELECT RecipeID, Name, Type, Description, Time, Difficulty, Ingredients, Calories,
                 Fats, Proteins, Carbohydrates, R.Vegan, R.Vegetarian, R.Keto, R.Lactose, R.Halal,
-                R.Kosher, R.Dairy_free, R.Low_carbs, image
+                R.Kosher, R.Dairy_free, R.Low_carbs, R.Gluten_free, R.Peanuts, R.Eggs, R.Fish,
+                R.Tree_nuts, R.Soy, image
               FROM Recipe R
               INNER JOIN Preferences P ON
                 P.UserID = $userId AND
@@ -225,7 +233,13 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
                 (R.Halal OR (NOT P.Halal)) AND
                 (R.Kosher OR (NOT P.Kosher)) AND
                 (R.Dairy_free OR (NOT P.Dairy_free)) AND
-                (R.Low_carbs OR (NOT P.Low_carbs))
+                (R.Low_carbs OR (NOT P.Low_carbs)) AND
+                (R.Gluten_free OR (NOT P.Gluten_free)) AND
+                (R.Peanuts OR (NOT P.Peanuts)) AND
+                (R.Eggs OR (NOT P.Eggs)) AND
+                (R.Fish OR (NOT P.Fish)) AND
+                (R.Tree_nuts OR (NOT P.Tree_nuts)) AND
+                (R.Soy OR (NOT P.Soy))
               ORDER BY RAND();
              """.as(recipeParser.*)
       }

@@ -29,29 +29,46 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
     }(databaseExecutionContext)
   }
 
-  def addNewUser(registerData: RegisterData): Future[Option[(Long, Long)]] = {
+  def addNewUser(registerData: RegisterData): Future[Boolean] = {
     Future {
       db.withConnection { implicit conn =>
-        val usersInsert: Option[Long] = SQL"""
-             INSERT INTO Users(Username, Password, Email)
-             VALUES (${registerData.username}, ${registerData.password}, ${registerData.email});
-           """.executeInsert()
+        val usersInsert: Option[Long] =
+          SQL"""
+               INSERT INTO Users(Username, Password, Email)
+               VALUES (${registerData.username}, ${registerData.password}, ${registerData.email});
+               """.executeInsert()
 
         val preferences = registerData.preferences
 
-        val prefInsert: Option[Long] = SQL"""
-             INSERT INTO Preferences(UserID, Vegan, Vegetarian,
-             Keto, Lactose, Halal, Kosher, Dairy_free, Low_carbs,
-             Gluten_free, Peanuts, Eggs, Fish, Tree_nuts, Soy, Max_Calories)
-             VALUES (${preferences.isVegan}, ${preferences.isVegetarian},
-             ${preferences.isKeto}, ${preferences.isLactose}, ${preferences.isHalal},
-             ${preferences.isKosher}, ${preferences.isDairyFree}, ${preferences.isLowCarbs});
-           """.executeInsert()
+        SQL"""
+             INSERT INTO Preferences(
+               UserID, Vegan, Vegetarian, Keto,
+               Lactose, Halal, Kosher, Dairy_free,
+               Low_carbs, Gluten_free, Peanuts,
+               Eggs, Fish, Tree_nuts, Soy,
+               Target_Calories
+             )
+             VALUES (
+               ${usersInsert.get},
+               ${preferences.isVegan},
+               ${preferences.isVegetarian},
+               ${preferences.isKeto},
+               ${preferences.isLactose},
+               ${preferences.isHalal},
+               ${preferences.isKosher},
+               ${preferences.isDairyFree},
+               ${preferences.isLowCarbs},
+               ${preferences.isGlutenFree},
+               ${preferences.isPeanuts},
+               ${preferences.isEggs},
+               ${preferences.isFish},
+               ${preferences.isTreeNuts},
+               ${preferences.isSoy},
+               ${preferences.targetCalories.get}
+             );
+             """.executeInsert()
 
-        for {
-          user <- usersInsert
-          pref <- prefInsert
-        } yield (user, pref)
+        usersInsert.nonEmpty
       }
     }(databaseExecutionContext)
   }

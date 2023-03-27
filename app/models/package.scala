@@ -35,7 +35,14 @@ package object models {
     isHalal: Boolean = false,
     isKosher: Boolean = false,
     isDairyFree: Boolean = false,
-    isLowCarbs: Boolean = false
+    isLowCarbs: Boolean = false,
+    isGlutenFree: Boolean = false,
+    isPeanuts: Boolean = false,
+    isEggs: Boolean = false,
+    isFish: Boolean = false,
+    isTreeNuts: Boolean = false,
+    isSoy: Boolean = false,
+    targetCalories: Option[Int]
   )
 
   object Preferences {
