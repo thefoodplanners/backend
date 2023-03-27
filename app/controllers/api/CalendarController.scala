@@ -101,6 +101,27 @@ class CalendarController @Inject()(
   private def getRandomElem[A](seq: Seq[A], random: Random): A =
     seq(random.nextInt(seq.length))
 
+  def moveMealSlot: Action[JsValue] = Action.async(parse.json) { request =>
+    request.session
+      .get(SESSION_KEY)
+      .map { userId =>
+        Json.fromJson[MovedMealSlot](request.body)
+          .asOpt
+          .map { movedMealSlot =>
+            database.moveMealSlot(userId, movedMealSlot).map { success =>
+              if (success) Ok("Meal slot successfully moved")
+              else InternalServerError("Meal slot not moved successfully.")
+            }
+          }
+          .getOrElse {
+            Future.successful(BadRequest("Error in processing json body."))
+          }
+      }
+      .getOrElse {
+        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+      }
+  }
+
   /**
    * Action which fetches all the meal slots for a given user in a given week.
    *

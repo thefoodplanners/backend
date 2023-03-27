@@ -1,4 +1,3 @@
-import org.joda.time.LocalDate
 import play.api.libs.json.{ Json, OFormat }
 
 import java.util.Date
@@ -40,6 +39,12 @@ package object models {
 
   object Preferences {
     implicit val formats: OFormat[Preferences] = Json.format[Preferences]
+  }
+
+  case class MovedMealSlot(mealSlotId: Int, date: Date, mealNum: Int)
+
+  object MovedMealSlot {
+    implicit val formats: OFormat[MovedMealSlot] = Json.format[MovedMealSlot]
   }
 
   case class MealSlot(mealSlotId: Int, recipe: Recipe)

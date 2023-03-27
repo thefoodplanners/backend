@@ -4,6 +4,7 @@ import anorm._
 import org.joda.time.LocalDate
 import play.api.db.Database
 
+import java.util.Date
 import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
@@ -50,6 +51,14 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     ) map {
     case mealSlotId ~ date ~ mealNum ~ recipe =>
       FetchedMealSlot(mealSlotId, date, mealNum, recipe)
+  }
+
+  private val movedMealSlotParser = (
+    SqlParser.date("Date") ~
+      SqlParser.int("Meal_Number")
+  ) map {
+    case date ~ mealNum =>
+      MovedMealSlot(0, date, mealNum)
   }
 
   /**
@@ -113,6 +122,58 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
                WHERE TimetableID = $mealSlotId AND
                UserID = $userId;
                """.executeUpdate()
+      }
+    }(databaseExecutionContext)
+  }
+
+  def moveMealSlot(userId: String, newMovedMealSlot: MovedMealSlot): Future[Boolean] = {
+    Future {
+      db.withConnection { implicit conn =>
+        val oldMovedMealSlot =
+          SQL"""
+                SELECT Date, Meal_Number
+                FROM Meal_Slot
+                WHERE TimetableID = ${newMovedMealSlot.mealSlotId} AND
+                UserID = $userId;
+                """.as(movedMealSlotParser.single)
+
+        val oldMeals =
+          SQL"""
+               SELECT TimetableID
+               FROM Meal_Slot
+               WHERE Date = ${oldMovedMealSlot.date} AND
+               Meal_Number > ${oldMovedMealSlot.mealNum};
+               """.as(SqlParser.scalar[Int].*)
+
+        val newMeals =
+          SQL"""
+                SELECT TimetableID
+                FROM Meal_Slot
+                WHERE Date = ${newMovedMealSlot.date} AND
+                Meal_Number >= ${newMovedMealSlot.mealNum};
+                """.as(SqlParser.scalar[Int].*)
+
+        oldMeals.foreach { mealSlotId =>
+          SQL"""
+                UPDATE Meal_Slot
+                SET Meal_Number = Meal_Number - 1
+                WHERE TimetableID = $mealSlotId
+                """.execute()
+        }
+
+        newMeals.foreach { mealSlotId =>
+          SQL"""
+                UPDATE Meal_Slot
+                SET Meal_Number = Meal_Number + 1
+                WHERE TimetableID = $mealSlotId
+                """.execute()
+        }
+
+        SQL"""
+              UPDATE Meal_Slot
+              SET Date = ${newMovedMealSlot.date}, Meal_Number = ${newMovedMealSlot.mealNum}
+              WHERE TimetableID = ${newMovedMealSlot.mealSlotId};
+           """.execute()
       }
     }(databaseExecutionContext)
   }
