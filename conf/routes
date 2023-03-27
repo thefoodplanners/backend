@@ -51,6 +51,10 @@ PUT     /calendar/meals/:mealSlotId         controllers.api.CalendarController.u
 #      description: Error in processing json body.
 #    401:
 #      description: Not logged in.
+#  parameters:
+#    - name: body
+#      schema:
+#        $ref: '#/definitions/models.MovedMealSlot'
 ###
 POST    /calendar/meals/move                controllers.api.CalendarController.moveMealSlot
 

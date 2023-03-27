@@ -133,7 +133,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
-  def moveMealSlot(userId: String, newMovedMealSlot: MovedMealSlot): Future[Boolean] = {
+  def moveMealSlot(userId: String, newMovedMealSlot: MovedMealSlot): Future[Int] = {
     Future {
       db.withConnection { implicit conn =>
         val oldMovedMealSlot =
@@ -180,7 +180,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
               UPDATE Meal_Slot
               SET Date = ${newMovedMealSlot.date}, Meal_Number = ${newMovedMealSlot.mealNum}
               WHERE TimetableID = ${newMovedMealSlot.mealSlotId};
-           """.execute()
+           """.executeUpdate()
       }
     }(databaseExecutionContext)
   }
