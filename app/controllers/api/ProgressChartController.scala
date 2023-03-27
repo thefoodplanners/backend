@@ -1,6 +1,6 @@
 package controllers.api
 
-import models.{ ProgressChartDao, SESSION_KEY }
+import models.{ ProgressChartDao, SESSION_KEY, UNAUTH_MSG }
 import org.joda.time.LocalDate
 import play.api.libs.json.Json
 import play.api.mvc._
@@ -33,7 +33,7 @@ class ProgressChartController @Inject()(
         }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 

@@ -1,6 +1,6 @@
 package controllers.api
 
-import models.{ SESSION_KEY, UserDao }
+import models.{ SESSION_KEY, UNAUTH_MSG, UserDao }
 import play.api.mvc._
 
 import javax.inject._
@@ -20,7 +20,7 @@ class UserController @Inject()(
         database.fetchTargetCalories(userId).map(target => Ok(target.toString))
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 

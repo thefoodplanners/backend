@@ -42,7 +42,7 @@ class CalendarController @Inject()(
         }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in"))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 
@@ -68,7 +68,7 @@ class CalendarController @Inject()(
         }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in"))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 
@@ -118,7 +118,7 @@ class CalendarController @Inject()(
           }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 
@@ -146,7 +146,7 @@ class CalendarController @Inject()(
         }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in"))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 
@@ -212,7 +212,7 @@ class CalendarController @Inject()(
           }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 
@@ -231,7 +231,7 @@ class CalendarController @Inject()(
           }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 
@@ -246,7 +246,7 @@ class CalendarController @Inject()(
         }
       }
       .getOrElse {
-        Future.successful(Unauthorized("Sorry buddy, not allowed in."))
+        Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
 
