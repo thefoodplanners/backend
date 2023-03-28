@@ -215,9 +215,32 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
    * @return List of all the recipes from the database that correspond with the preference
    *         of the user
    */
-  def fetchRecommendations(userId: String): Future[Seq[Recipe]] = {
+  def fetchRecommendations(userId: String, dateOpt: Option[String]): Future[Seq[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
+
+        val addQuery = dateOpt.map { date =>
+          val targetCalories =
+            SQL"""
+                  SELECT Target_Calories
+                  FROM Preferences
+                  WHERE UserID = $userId;
+                  """.as(SqlParser.scalar[Int].single)
+
+          val totalCaloriesForDay =
+            SQL"""
+                  SELECT SUM(Calories) AS Total_Calories
+                  FROM Meal_Slot ms
+                  INNER JOIN Recipe r ON
+                    ms.RecipeID = r.RecipeID AND
+                    Date = $date
+               """.as(SqlParser.scalar[Int].single)
+
+          val caloriesLeft = targetCalories - totalCaloriesForDay
+
+          s"AND Calories <= '$caloriesLeft'"
+        }.getOrElse("")
+
         SQL"""
               SELECT RecipeID, Name, Type, Description, Time, Difficulty, Ingredients, Calories,
                 Fats, Proteins, Carbohydrates, R.Vegan, R.Vegetarian, R.Keto, R.Lactose, R.Halal,
@@ -240,6 +263,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
                 (R.Fish OR (NOT P.Fish)) AND
                 (R.Tree_nuts OR (NOT P.Tree_nuts)) AND
                 (R.Soy OR (NOT P.Soy))
+                #$addQuery
               ORDER BY RAND();
              """.as(recipeParser.*)
       }

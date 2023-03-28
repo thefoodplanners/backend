@@ -29,12 +29,12 @@ class CalendarController @Inject()(
    * @return HTTP response consisting of 2D array of all the recommended
    *         recipes, split into groups of 3.
    */
-  def getRecommendations: Action[AnyContent] = Action.async { request =>
+  def getRecommendations(date: String): Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>
         // Fetch recipes from database and split it into groups of 3.
-        database.fetchRecommendations(userId).flatMap { recipes =>
+        database.fetchRecommendations(userId, Some(date)).flatMap { recipes =>
           mealSlotImageRefToString(recipes).map { recipesWithImg =>
             val splitRecipes = recipesWithImg.grouped(3).toSeq
             Ok(Json.toJson(splitRecipes))
@@ -51,7 +51,7 @@ class CalendarController @Inject()(
       .get(SESSION_KEY)
       .map { userId =>
         databaseUser.fetchTargetCalories(userId).flatMap { maxCalories =>
-          database.fetchRecommendations(userId).map { recipes =>
+          database.fetchRecommendations(userId, None).map { recipes =>
             val recipesByMealType = recipes.groupBy(_.mealType)
             val weeklyMeal = Seq.tabulate(7) { _ =>
               val rand = Random
