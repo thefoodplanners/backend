@@ -109,7 +109,7 @@ class CalendarController @Inject()(
           .asOpt
           .map { movedMealSlot =>
             database.moveMealSlot(userId, movedMealSlot).map { rowsUpdated =>
-              if (rowsUpdated == 1) Ok("Meal slot successfully moved")
+              if (rowsUpdated == 1) Ok("Meal slot successfully moved.")
               else if (rowsUpdated == 0) InternalServerError("Meal slot not moved.")
               else InternalServerError("Multiple meal slots moved.")
             }

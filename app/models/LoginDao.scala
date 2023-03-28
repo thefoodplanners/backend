@@ -1,6 +1,7 @@
 package models
 
 import anorm._
+import org.mindrot.jbcrypt.BCrypt
 import play.api.db.Database
 
 import javax.inject.Inject
@@ -8,23 +9,33 @@ import scala.concurrent.Future
 import scala.language.postfixOps
 
 class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
-  def checkLoginDetails(loginDetails: LoginData): Future[(Boolean, Int)] = {
+
+  private val checkLoginParser = (
+    SqlParser.int("UserID") ~
+      SqlParser.str("Password")
+    ) map {
+    case userId ~ hashedPassword =>
+      (userId, hashedPassword)
+  }
+
+  def checkLoginDetails(loginDetails: LoginData): Future[Option[Int]] = {
     val newLoginDetails = loginDetails.copy(username = loginDetails.username.split("@").head)
 
     Future {
       db.withConnection { implicit conn =>
-        val firstRow: Option[Int] =
+        val hashedPassword: Option[(Int, String)] =
           SQL"""
-               SELECT UserID FROM Users
-               WHERE Username=${newLoginDetails.username}
-               AND Password=${newLoginDetails.password};
+               SELECT UserID, Password
+               FROM Users
+               WHERE Username = ${newLoginDetails.username};
                """
-            .as(SqlParser.scalar[Int].singleOpt)
+            .as(checkLoginParser.singleOpt)
 
-        val isAuthorised = firstRow.nonEmpty
-        val userId = firstRow.getOrElse(0)
+        val isAuthorised = hashedPassword
+          .filter { case(_, hashedPassword) => BCrypt.checkpw(loginDetails.password, hashedPassword)}
+          .map(_._1)
 
-        (isAuthorised, userId)
+        isAuthorised
       }
     }(databaseExecutionContext)
   }
@@ -32,10 +43,12 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
   def addNewUser(registerData: RegisterData): Future[Boolean] = {
     Future {
       db.withConnection { implicit conn =>
+        val hashedPassword = BCrypt.hashpw(registerData.password, BCrypt.gensalt())
+
         val usersInsert: Option[Long] =
           SQL"""
                INSERT INTO Users(Username, Password, Email)
-               VALUES (${registerData.username}, ${registerData.password}, ${registerData.email});
+               VALUES (${registerData.username}, $hashedPassword, ${registerData.email});
                """.executeInsert()
 
         val preferences = registerData.preferences

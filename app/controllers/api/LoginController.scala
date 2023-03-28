@@ -28,10 +28,10 @@ class LoginController @Inject()(
     Json.fromJson[LoginData](request.body)
       .asOpt
       .map(database.checkLoginDetails)
-      .map(_.map { case (isAuthorised, userId) =>
-        if (isAuthorised) {
+      .map(_.map { userIdOpt =>
+        if (userIdOpt.nonEmpty) {
           Ok("Login successful.")
-            .withSession(SESSION_KEY -> userId.toString)
+            .withSession(SESSION_KEY -> userIdOpt.get.toString)
         }
         else Unauthorized("Username and/or password is incorrect.")
       }
