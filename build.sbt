@@ -5,6 +5,10 @@ lazy val root = (project in file("."))
     version := "1.0-SNAPSHOT",
     scalaVersion := "2.13.10",
     swaggerDomainNameSpaces := Seq("models"),
+    PlayKeys.devSettings ++= Seq(
+      "play.server.https.port" -> "9443",
+      "play.server.http.port" -> "9000",
+    ),
     libraryDependencies ++= Seq(
       jdbc,
       jdbc % Test,
