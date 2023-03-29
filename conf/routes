@@ -93,7 +93,7 @@ GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.g
 # User endpoints
 
 ###
-#  summary: Fetches the target calories for a given day of the given user.
+#  summary: Fetches the target calories for a given user.
 #  responses:
 #    200:
 #      description: Target calories value.
@@ -115,14 +115,14 @@ GET     /search                             controllers.api.SearchController.sea
 # Progress Chart endpoints
 
 ###
-#  summary: Fetch calories consumed by the user for a given time period. Week, Month, etc.
+#  summary: Fetch metrics (calories and macros) consumed by the user for a given time period. Week, Month, etc.
 #  responses:
 #    200:
 #      description: Calories consumed by the user for a given time period.
 #    401:
 #      description: Not logged in.
 ###
-GET     /chart/:dateType/:date/calories     controllers.api.ProgressChartController.getWeeklyCalories(dateType: String, date: String)
+GET     /chart/:dateType/:date/metrics      controllers.api.ProgressChartController.getMetrics(dateType: String, date: String)
 
 # Login endpoints
 

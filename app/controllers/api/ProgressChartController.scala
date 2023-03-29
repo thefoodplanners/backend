@@ -15,7 +15,7 @@ class ProgressChartController @Inject()(
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
-  def getWeeklyCalories(dateType: String, date: String): Action[AnyContent] = Action.async { request =>
+  def getMetrics(dateType: String, date: String): Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>
@@ -28,8 +28,8 @@ class ProgressChartController @Inject()(
           case "year" => localDate.getYear
         }
 
-        database.fetchConsumedCalories(userId, dateType, dateNum).map { allConsumedCalories =>
-          Ok(Json.toJson(allConsumedCalories))
+        database.fetchMetrics(userId, dateType, dateNum).map { allMetrics =>
+          Ok(Json.toJson(allMetrics))
         }
       }
       .getOrElse {

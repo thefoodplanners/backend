@@ -12,21 +12,34 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
 
   private val metricsParser = (
     SqlParser.str("Date_Name") ~
-      SqlParser.int("Calories_Consumed")
+      SqlParser.int("Total_Cals")~
+      SqlParser.double("Total_Fats") ~
+      SqlParser.double("Total_Proteins") ~
+      SqlParser.double("Total_Carbs")
   ) map {
-    case date ~ caloriesConsumed =>
-      ConsumedCalories(date, caloriesConsumed)
+    case date ~ totalCalories ~ totalFats ~ totalProteins ~ totalCarbs =>
+      Metrics(date, totalCalories, totalFats, totalProteins, totalCarbs)
   }
 
-  def fetchConsumedCalories(userId: String, dateType: String, dateNum: Int): Future[Seq[ConsumedCalories]] = {
+  def fetchMetrics(userId: String, dateType: String, dateNum: Int): Future[Seq[Metrics]] = {
     Future {
       db.withConnection { implicit conn =>
         val sqlQuery = dateType match {
           case "day" =>
             SQL"""
-                  SELECT DAYNAME(Date) AS Date_Name, Calories_Consumed
+                  SELECT
+                    DAYNAME(Date) AS Date_Name,
+                    Total_Cals,
+                    Total_Fats,
+                    Total_Proteins,
+                    Total_Carbs
                   FROM (
-                    SELECT Date, SUM(Calories) AS Calories_Consumed
+                    SELECT
+                      Date,
+                      SUM(Calories) AS Total_Cals,
+                      SUM(Fats) AS Total_Fats,
+                      SUM(Proteins) AS Total_Proteins,
+                      SUM(Carbohydrates) AS Total_Carbs
                     FROM Meal_Slot ms
                     JOIN Recipe r ON ms.RecipeID = r.RecipeID
                     WHERE ms.UserID = $userId
@@ -36,11 +49,21 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                   """
           case "week" =>
             SQL"""
-                   SELECT CONCAT(Start_Date, ' - ', End_Date) AS Date_Name, Calories_Consumed
+                   SELECT
+                     CONCAT(Start_Date, ' - ', End_Date) AS Date_Name,
+                     Total_Cals,
+                     Total_Fats,
+                     Total_Proteins,
+                     Total_Carbs
                    FROM (
-                     SELECT DATE_ADD(Date, INTERVAL(0-WEEKDAY(Date)) DAY) AS Start_Date,
+                     SELECT
+                       DATE_ADD(Date, INTERVAL(0-WEEKDAY(Date)) DAY) AS Start_Date,
                        DATE_ADD(Date, INTERVAL(6-WEEKDAY(Date)) Day) AS End_Date,
-                       SUM(Calories) AS Calories_Consumed FROM Meal_Slot ms
+                       SUM(Calories) AS Total_Cals,
+                       SUM(Fats) AS Total_Fats,
+                       SUM(Proteins) AS Total_Proteins,
+                       SUM(Carbohydrates) AS Total_Carbs
+                     FROM Meal_Slot ms
                      JOIN Recipe r ON ms.RecipeID = r.RecipeID
                      WHERE ms.UserID = $userId
                      GROUP BY Start_Date, End_Date
@@ -48,7 +71,12 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                """
           case "month" =>
             SQL"""
-                 SELECT MONTHNAME(Date) AS Date_Name, SUM(Calories) AS Calories_Consumed
+                 SELECT
+                   MONTHNAME(Date) AS Date_Name,
+                   SUM(Calories) AS Total_Cals,
+                   SUM(Fats) AS Total_Fats,
+                   SUM(Proteins) AS Total_Proteins,
+                   SUM(Carbohydrates) AS Total_Carbs
                  FROM Meal_Slot ms
                  JOIN Recipe r ON ms.RecipeID = r.RecipeID
                  WHERE ms.UserID = $userId
@@ -57,7 +85,12 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                  """
           case "year" =>
             SQL"""
-                 SELECT CONVERT(YEAR(Date), char) AS Date_Name, SUM(Calories) AS Calories_Consumed
+                 SELECT
+                   CONVERT(YEAR(Date), char) AS Date_Name,
+                   SUM(Calories) AS Total_Cals,
+                   SUM(Fats) AS Total_Fats,
+                   SUM(Proteins) AS Total_Proteins,
+                   SUM(Carbohydrates) AS Total_Carbs
                  FROM Meal_Slot ms
                  JOIN Recipe r ON ms.RecipeID = r.RecipeID
                  WHERE ms.UserID = $userId
