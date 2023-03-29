@@ -1,7 +1,6 @@
 package controllers.api
 
 import models.{ ProgressChartDao, SESSION_KEY, UNAUTH_MSG }
-import org.joda.time.LocalDate
 import play.api.libs.json.Json
 import play.api.mvc._
 

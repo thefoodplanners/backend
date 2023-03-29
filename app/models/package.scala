@@ -61,6 +61,15 @@ package object models {
     implicit val formats: OFormat[MealSlot] = Json.format[MealSlot]
   }
 
+  case class MetricsWithLabel(
+    date: String,
+    label: String,
+    metrics: Seq[Metrics]
+  )
+  object MetricsWithLabel {
+    implicit val formats: OFormat[MetricsWithLabel] = Json.format[MetricsWithLabel]
+  }
+
   case class Metrics(
     date: String,
     totalCalories: Int,

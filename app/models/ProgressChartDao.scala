@@ -12,23 +12,37 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
 
   private val metricsParser = (
     SqlParser.str("Date_Name") ~
-      SqlParser.int("Total_Cals")~
+      SqlParser.int("Total_Cals") ~
       SqlParser.double("Total_Fats") ~
       SqlParser.double("Total_Proteins") ~
       SqlParser.double("Total_Carbs")
-  ) map {
+    ) map {
     case date ~ totalCalories ~ totalFats ~ totalProteins ~ totalCarbs =>
       Metrics(date, totalCalories, totalFats, totalProteins, totalCarbs)
   }
 
-  def fetchMetrics(userId: String, dateType: String, date: String): Future[Seq[Metrics]] = {
+  def fetchMetrics(userId: String, dateType: String, date: String): Future[MetricsWithLabel] = {
     Future {
       db.withConnection { implicit conn =>
         val localDate = LocalDate.parse(date)
-        val range = 7
+        val lowerRange = 7
+        val highRange = 1
 
         val sqlQuery = dateType match {
           case "day" =>
+              SQL"""
+                  SELECT
+                    CONCAT('Meal ', Meal_Number) AS Date_Name,
+                    Calories AS Total_Cals,
+                    Fats AS Total_Fats,
+                    Proteins AS Total_Proteins,
+                    Carbohydrates AS Total_Carbs
+                  FROM Meal_Slot ms INNER JOIN Recipe r ON ms.RecipeID =r.RecipeID
+                  WHERE ms.UserID = $userId AND
+                  Date=$date
+                  ORDER BY Meal_Number;
+               """
+          case "week" =>
             SQL"""
                   SELECT
                     DAYNAME(Date) AS Date_Name,
@@ -50,7 +64,7 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                     HAVING WEEK(Date, 1) = ${localDate.getWeekOfWeekyear}
                   ) AS ActualDates;
                   """
-          case "week" =>
+          case "month" =>
             SQL"""
                    SELECT
                      CONCAT(DATE_FORMAT(Start_Date, '%b %d'), ' - ', DATE_FORMAT(End_Date, '%b %d')) AS Date_Name,
@@ -60,7 +74,7 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                      Total_Carbs
                    FROM (
                      SELECT
-                       DATE_ADD(Date, INTERVAL(0-WEEKDAY(Date)) DAY) AS Start_Date,
+                       DATE_ADD(Date, INTERVAL(0-WEEKDAY(Date)) Day) AS Start_Date,
                        DATE_ADD(Date, INTERVAL(6-WEEKDAY(Date)) Day) AS End_Date,
                        SUM(Calories) AS Total_Cals,
                        SUM(Fats) AS Total_Fats,
@@ -69,11 +83,11 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                      FROM Meal_Slot ms
                      JOIN Recipe r ON ms.RecipeID = r.RecipeID
                      WHERE ms.UserID = $userId AND
-                     Date BETWEEN ${localDate.minusWeeks(range).toString} AND ${localDate.plusWeeks(range).toString}
+                     MONTH(Date) = ${localDate.getMonthOfYear}
                      GROUP BY Start_Date, End_Date
                    ) AS Start_End;
                """
-          case "month" =>
+          case "year" =>
             SQL"""
                  SELECT
                    MONTHNAME(Date) AS Date_Name,
@@ -84,11 +98,11 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                  FROM Meal_Slot ms
                  JOIN Recipe r ON ms.RecipeID = r.RecipeID
                  WHERE ms.UserID = $userId AND
-                 Date BETWEEN ${localDate.minusMonths(range).toString} AND ${localDate.plusMonths(range).toString}
+                 YEAR(Date) = ${localDate.getYear}
                  GROUP BY MONTHNAME(Date)
                  ORDER BY STR_TO_DATE(CONCAT('0001 ', Date_Name, ' 01'), '%Y %M %d');
                  """
-          case "year" =>
+          case "bruh" =>
             SQL"""
                  SELECT
                    CONVERT(YEAR(Date), char) AS Date_Name,
@@ -103,7 +117,16 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                  """
         }
 
-        sqlQuery.as(metricsParser.*)
+        val metrics = sqlQuery.as(metricsParser.*)
+
+        val label: String = dateType match {
+          case "day" => localDate.toString("EEE (MMM dd yyyy)")
+          case "week" => s"${localDate.toString("MMM dd yyyy")} - ${localDate.plusDays(6).toString("MMM dd yyyy")}"
+          case "month" => localDate.toString("MMMM yyyy")
+          case "year" => localDate.getYear.toString
+        }
+
+        MetricsWithLabel(date, label, metrics)
       }
     }(databaseExecutionContext)
   }
