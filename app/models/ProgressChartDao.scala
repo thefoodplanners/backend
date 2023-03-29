@@ -21,9 +21,12 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
       Metrics(date, totalCalories, totalFats, totalProteins, totalCarbs)
   }
 
-  def fetchMetrics(userId: String, dateType: String, dateNum: Int): Future[Seq[Metrics]] = {
+  def fetchMetrics(userId: String, dateType: String, date: String): Future[Seq[Metrics]] = {
     Future {
       db.withConnection { implicit conn =>
+        val localDate = LocalDate.parse(date)
+        val range = 7
+
         val sqlQuery = dateType match {
           case "day" =>
             SQL"""
@@ -44,7 +47,7 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                     JOIN Recipe r ON ms.RecipeID = r.RecipeID
                     WHERE ms.UserID = $userId
                     GROUP BY Date
-                    HAVING WEEK(Date, 1) = $dateNum
+                    HAVING WEEK(Date, 1) = ${localDate.getWeekOfWeekyear}
                   ) AS ActualDates;
                   """
           case "week" =>
@@ -65,7 +68,8 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                        SUM(Carbohydrates) AS Total_Carbs
                      FROM Meal_Slot ms
                      JOIN Recipe r ON ms.RecipeID = r.RecipeID
-                     WHERE ms.UserID = $userId
+                     WHERE ms.UserID = $userId AND
+                     Date BETWEEN ${localDate.minusWeeks(range).toString} AND ${localDate.plusWeeks(range).toString}
                      GROUP BY Start_Date, End_Date
                    ) AS Start_End;
                """
@@ -79,7 +83,8 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                    SUM(Carbohydrates) AS Total_Carbs
                  FROM Meal_Slot ms
                  JOIN Recipe r ON ms.RecipeID = r.RecipeID
-                 WHERE ms.UserID = $userId
+                 WHERE ms.UserID = $userId AND
+                 Date BETWEEN ${localDate.minusMonths(range).toString} AND ${localDate.plusMonths(range).toString}
                  GROUP BY MONTHNAME(Date)
                  ORDER BY STR_TO_DATE(CONCAT('0001 ', Date_Name, ' 01'), '%Y %M %d');
                  """

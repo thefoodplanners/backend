@@ -19,16 +19,7 @@ class ProgressChartController @Inject()(
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        val localDate = LocalDate.parse(date)
-
-        val dateNum = dateType match {
-          case "day" => localDate.getWeekOfWeekyear
-          case "week" => localDate.getWeekOfWeekyear
-          case "month" => localDate.getMonthOfYear
-          case "year" => localDate.getYear
-        }
-
-        database.fetchMetrics(userId, dateType, dateNum).map { allMetrics =>
+        database.fetchMetrics(userId, dateType, date).map { allMetrics =>
           Ok(Json.toJson(allMetrics))
         }
       }
