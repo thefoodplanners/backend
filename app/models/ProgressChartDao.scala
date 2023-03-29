@@ -50,7 +50,7 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
           case "week" =>
             SQL"""
                    SELECT
-                     CONCAT(Start_Date, ' - ', End_Date) AS Date_Name,
+                     CONCAT(DATE_FORMAT(Start_Date, '%b %d'), ' - ', DATE_FORMAT(End_Date, '%b %d')) AS Date_Name,
                      Total_Cals,
                      Total_Fats,
                      Total_Proteins,
