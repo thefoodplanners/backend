@@ -51,7 +51,7 @@ class CalendarController @Inject()(
       .get(SESSION_KEY)
       .map { userId =>
         databaseUser.fetchTargetCalories(userId).flatMap { maxCalories =>
-          database.fetchRecommendations(userId, None).map { recipes =>
+          database.fetchRecommendations(userId, None).flatMap { recipes =>
             val recipesByMealType = recipes.groupBy(_.mealType)
             val weeklyMeal = Seq.tabulate(7) { _ =>
               val rand = Random
@@ -63,7 +63,10 @@ class CalendarController @Inject()(
               }
             }
 
-            Ok(Json.toJson(weeklyMeal))
+            mealSlotImageRefToString(weeklyMeal.flatten).map { recipes =>
+              val weeklyMealWithImg = recipes.grouped(3).toSeq
+              Ok(Json.toJson(weeklyMealWithImg))
+            }
           }
         }
       }
