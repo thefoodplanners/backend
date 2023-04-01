@@ -46,27 +46,32 @@ class CalendarController @Inject()(
       }
   }
 
-  def generateWeeklyMealPlan: Action[AnyContent] = Action.async { request =>
+  def generateWeeklyMealPlan(date: String): Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>
+        val localDate = LocalDate.parse(date)
+
         databaseUser.fetchTargetCalories(userId).flatMap { maxCalories =>
           database.fetchRecommendations(userId, None).flatMap { recipes =>
             val recipesByMealType = recipes.groupBy(_.mealType)
-            val weeklyMeal = Seq.tabulate(7) { _ =>
+            val weeklyMeals = Seq.tabulate(7) { dayIndex =>
               val rand = Random
               val pick = rand.nextInt(3)
-              pick match {
+              val dayMeal = pick match {
                 case 0 => dayMealPlan(recipesByMealType, maxCalories, "Breakfast", rand)
                 case 1 => dayMealPlan(recipesByMealType, maxCalories, "Lunch", rand)
                 case 2 => dayMealPlan(recipesByMealType, maxCalories, "Dinner", rand)
               }
+              dayMeal.zipWithIndex.map { case (recipe, mealNumIndex) =>
+                FetchedMealSlot(0, localDate.plusDays(dayIndex).toDate, mealNumIndex + 1, recipe)
+              }
+            }.flatten
+
+            database.storeGeneratedMealPlan(userId, localDate, weeklyMeals).map { _ =>
+              Ok("Generated meals successfully added.")
             }
 
-            mealSlotImageRefToString(weeklyMeal.flatten).map { recipes =>
-              val weeklyMealWithImg = recipes.grouped(3).toSeq
-              Ok(Json.toJson(weeklyMealWithImg))
-            }
           }
         }
       }

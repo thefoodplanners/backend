@@ -270,4 +270,22 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
+  def storeGeneratedMealPlan(userId: String, date: LocalDate, mealSlots: Seq[FetchedMealSlot]): Future[Boolean] = {
+    Future {
+      db.withConnection { implicit conn =>
+        SQL"""
+              DELETE FROM Meal_Slot
+              WHERE Date BETWEEN ${date.toString} AND ${date.withDayOfWeek(7).toString}
+              AND UserID = $userId;
+           """.execute()
+
+        mealSlots.map { mealSlot =>
+          SQL"""
+                INSERT INTO Meal_Slot(Date, Meal_Number, RecipeID, UserID)
+                VALUES(${mealSlot.date}, ${mealSlot.mealNum}, ${mealSlot.recipe.id}, $userId);
+             """.execute()
+        }.forall(_ == true)
+      }
+    }(databaseExecutionContext)
+  }
 }
