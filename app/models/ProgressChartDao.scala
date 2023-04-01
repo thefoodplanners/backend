@@ -25,8 +25,6 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
     Future {
       db.withConnection { implicit conn =>
         val localDate = LocalDate.parse(date)
-        val lowerRange = 7
-        val highRange = 1
 
         val sqlQuery = dateType match {
           case "day" =>
@@ -34,9 +32,9 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                   SELECT
                     CONCAT('Meal ', Meal_Number) AS Date_Name,
                     Calories AS Total_Cals,
-                    Fats AS Total_Fats,
-                    Proteins AS Total_Proteins,
-                    Carbohydrates AS Total_Carbs
+                    ROUND(Fats, 1) AS Total_Fats,
+                    ROUND(Proteins, 1) AS Total_Proteins,
+                    ROUND(Carbohydrates, 1) AS Total_Carbs
                   FROM Meal_Slot ms INNER JOIN Recipe r ON ms.RecipeID =r.RecipeID
                   WHERE ms.UserID = $userId AND
                   Date=$date
@@ -54,9 +52,9 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                     SELECT
                       Date,
                       SUM(Calories) AS Total_Cals,
-                      SUM(Fats) AS Total_Fats,
-                      SUM(Proteins) AS Total_Proteins,
-                      SUM(Carbohydrates) AS Total_Carbs
+                      ROUND(SUM(Fats), 1) AS Total_Fats,
+                      ROUND(SUM(Proteins), 1) AS Total_Proteins,
+                      ROUND(SUM(Carbohydrates), 1) AS Total_Carbs
                     FROM Meal_Slot ms
                     JOIN Recipe r ON ms.RecipeID = r.RecipeID
                     WHERE ms.UserID = $userId
@@ -77,9 +75,9 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                        DATE_ADD(Date, INTERVAL(0-WEEKDAY(Date)) Day) AS Start_Date,
                        DATE_ADD(Date, INTERVAL(6-WEEKDAY(Date)) Day) AS End_Date,
                        SUM(Calories) AS Total_Cals,
-                       SUM(Fats) AS Total_Fats,
-                       SUM(Proteins) AS Total_Proteins,
-                       SUM(Carbohydrates) AS Total_Carbs
+                       ROUND(SUM(Fats), 1) AS Total_Fats,
+                       ROUND(SUM(Proteins), 1) AS Total_Proteins,
+                       ROUND(SUM(Carbohydrates), 1) AS Total_Carbs
                      FROM Meal_Slot ms
                      JOIN Recipe r ON ms.RecipeID = r.RecipeID
                      WHERE ms.UserID = $userId AND
@@ -92,28 +90,15 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
                  SELECT
                    MONTHNAME(Date) AS Date_Name,
                    SUM(Calories) AS Total_Cals,
-                   SUM(Fats) AS Total_Fats,
-                   SUM(Proteins) AS Total_Proteins,
-                   SUM(Carbohydrates) AS Total_Carbs
+                   ROUND(SUM(Fats), 1) AS Total_Fats,
+                   ROUND(SUM(Proteins), 1) AS Total_Proteins,
+                   ROUND(SUM(Carbohydrates), 1) AS Total_Carbs
                  FROM Meal_Slot ms
                  JOIN Recipe r ON ms.RecipeID = r.RecipeID
                  WHERE ms.UserID = $userId AND
                  YEAR(Date) = ${localDate.getYear}
                  GROUP BY MONTHNAME(Date)
                  ORDER BY STR_TO_DATE(CONCAT('0001 ', Date_Name, ' 01'), '%Y %M %d');
-                 """
-          case "bruh" =>
-            SQL"""
-                 SELECT
-                   CONVERT(YEAR(Date), char) AS Date_Name,
-                   SUM(Calories) AS Total_Cals,
-                   SUM(Fats) AS Total_Fats,
-                   SUM(Proteins) AS Total_Proteins,
-                   SUM(Carbohydrates) AS Total_Carbs
-                 FROM Meal_Slot ms
-                 JOIN Recipe r ON ms.RecipeID = r.RecipeID
-                 WHERE ms.UserID = $userId
-                 GROUP BY CONVERT(YEAR(Date), char);
                  """
         }
 
