@@ -88,7 +88,7 @@ GET     /calendar/meals/recommendation      controllers.api.CalendarController.g
 #    401:
 #      description: Not logged in.
 ###
-GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.generateWeeklyMealPlan
+GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.generateWeeklyMealPlan(date: String)
 
 # User endpoints
 
