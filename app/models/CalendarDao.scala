@@ -11,7 +11,7 @@ import scala.language.postfixOps
 /**
  * DAO class for accessing the SQL database relating to calendar queries.
  */
-class CalendarDao @Inject()(db: Database, loginDao: LoginDao)(databaseExecutionContext: DatabaseExecutionContext) {
+class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
 
   val preferencesParser: RowParser[Preferences] = (
     SqlParser.bool("Vegan") ~
@@ -240,10 +240,11 @@ class CalendarDao @Inject()(db: Database, loginDao: LoginDao)(databaseExecutionC
                   FROM Meal_Slot ms
                   INNER JOIN Recipe r ON
                     ms.RecipeID = r.RecipeID AND
-                    Date = $date
-               """.as(SqlParser.scalar[Int].single)
+                    Date = $date AND
+                    ms.UserID = $userId;
+               """.as(SqlParser.scalar[Int].singleOpt)
 
-          val caloriesLeft = targetCalories - totalCaloriesForDay
+          val caloriesLeft = targetCalories - totalCaloriesForDay.getOrElse(0)
 
           s"AND Calories <= '$caloriesLeft'"
         }.getOrElse("")
