@@ -36,7 +36,7 @@ class UserController @Inject()(
       }
   }
 
-  def updatePreferences: Action[JsValue] = Action.async(parse.json) { request =>
+  def updatePreferences(): Action[JsValue] = Action.async(parse.json) { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>

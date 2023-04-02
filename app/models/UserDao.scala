@@ -12,7 +12,7 @@ class UserDao @Inject()(
   calendarDao: CalendarDao
 )(databaseExecutionContext: DatabaseExecutionContext) {
 
-  val userPreferencesParser = (
+  private val userPreferencesParser = (
     calendarDao.preferencesParser ~
       SqlParser.int("Target_calories")
   ) map {

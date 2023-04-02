@@ -126,7 +126,7 @@ GET     /user/preferences                      controllers.api.UserController.ge
 #      schema:
 #        $ref: '#/definitions/models.Preferences'
 ###
-POST    /user/preferences                      controllers.api.UserController.updatePreferences
+POST    /user/preferences                      controllers.api.UserController.updatePreferences()
 
 # Search endpoints
 
