@@ -102,6 +102,32 @@ GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.g
 ###
 GET     /user/target-calories                  controllers.api.UserController.getTargetCalories
 
+###
+#  summary: Fetches the preferences for a given user.
+#  responses:
+#    200:
+#      description: Preferences for user.
+#      schema:
+#        $ref: '#/definitions/models.Preferences'
+#    401:
+#      description: Not logged in.
+###
+GET     /user/preferences                      controllers.api.UserController.getPreferences
+
+###
+#  summary: Fetches the preferences for a given user.
+#  responses:
+#    200:
+#      description: Preferences for user.
+#    401:
+#      description: Not logged in.
+#  parameters:
+#    - name: body
+#      schema:
+#        $ref: '#/definitions/models.Preferences'
+###
+POST    /user/preferences                      controllers.api.UserController.updatePreferences
+
 # Search endpoints
 
 ###

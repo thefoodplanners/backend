@@ -42,7 +42,7 @@ package object models {
     isFish: Boolean = false,
     isTreeNuts: Boolean = false,
     isSoy: Boolean = false,
-    targetCalories: Option[Int]
+    targetCalories: Option[Int] = None
   )
 
   object Preferences {

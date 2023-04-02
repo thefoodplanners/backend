@@ -11,7 +11,31 @@ import scala.language.postfixOps
 /**
  * DAO class for accessing the SQL database relating to calendar queries.
  */
-class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
+class CalendarDao @Inject()(db: Database, loginDao: LoginDao)(databaseExecutionContext: DatabaseExecutionContext) {
+
+  val preferencesParser: RowParser[Preferences] = (
+    SqlParser.bool("Vegan") ~
+      SqlParser.bool("Vegetarian") ~
+      SqlParser.bool("Keto") ~
+      SqlParser.bool("Lactose") ~
+      SqlParser.bool("Halal") ~
+      SqlParser.bool("Kosher") ~
+      SqlParser.bool("Dairy_Free") ~
+      SqlParser.bool("Low_Carbs") ~
+      SqlParser.bool("Gluten_Free") ~
+      SqlParser.bool("Peanuts") ~
+      SqlParser.bool("Eggs") ~
+      SqlParser.bool("Fish") ~
+      SqlParser.bool("Tree_Nuts") ~
+      SqlParser.bool("Soy")
+    ) map {
+    case isVegan ~ isVegetarian ~ isKeto ~ isLactose ~ isHalal ~ isKosher ~
+      isDairyFree ~ isLowCarbs ~ isGlutenFree ~ isPeanuts ~ isEggs ~ isFish ~
+      isTreeNuts ~ isSoy =>
+      Preferences(isVegan, isVegetarian, isKeto, isLactose, isHalal,
+        isKosher, isDairyFree, isLowCarbs, isGlutenFree, isPeanuts, isEggs, isFish, isTreeNuts, isSoy, None
+      )
+  }
 
   val recipeParser: RowParser[Recipe] = (
     SqlParser.int("RecipeID") ~
@@ -25,28 +49,11 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
       SqlParser.float("Fats") ~
       SqlParser.float("Proteins") ~
       SqlParser.float("Carbohydrates") ~
-      SqlParser.bool("Vegan") ~
-      SqlParser.bool("Vegetarian") ~
-      SqlParser.bool("Keto") ~
-      SqlParser.bool("Lactose") ~
-      SqlParser.bool("Halal") ~
-      SqlParser.bool("Kosher") ~
-      SqlParser.bool("Dairy_Free") ~
-      SqlParser.bool("Low_Carbs") ~
-      SqlParser.bool("Gluten_Free") ~
-      SqlParser.bool("Peanuts") ~
-      SqlParser.bool("Eggs") ~
-      SqlParser.bool("Fish") ~
-      SqlParser.bool("Tree_Nuts") ~
-      SqlParser.bool("Soy") ~
-      SqlParser.str("image")
+      SqlParser.str("image") ~
+      preferencesParser
     ) map {
     case id ~ name ~ mealType ~ desc ~ time ~ diff ~ ingr ~ cal ~ fats ~ proteins ~
-      carbs ~ isVegan ~ isVegetarian ~ isKeto ~ isLactose ~ isHalal ~ isKosher ~
-      isDairyFree ~ isLowCarbs ~ isGlutenFree ~ isPeanuts ~ isEggs ~ isFish ~
-      isTreeNuts ~ isSoy ~ imageRef =>
-      val preferences = Preferences(isVegan, isVegetarian, isKeto, isLactose, isHalal,
-        isKosher, isDairyFree, isLowCarbs, isGlutenFree, isPeanuts, isEggs, isFish, isTreeNuts, isSoy, None)
+      carbs ~ imageRef ~ preferences =>
       Recipe(id, name, mealType, desc, time, diff, ingr, cal, fats, proteins, carbs, preferences, imageRef)
   }
 
