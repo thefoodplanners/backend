@@ -18,6 +18,35 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
       (userId, hashedPassword)
   }
 
+  def insertPrefsQuery(userId: String, prefs: Preferences): SimpleSql[Row] =
+    SQL"""
+          INSERT INTO Preferences(
+            UserID, Vegan, Vegetarian, Keto,
+            Lactose, Halal, Kosher, Dairy_free,
+            Low_carbs, Gluten_free, Peanuts,
+            Eggs, Fish, Tree_nuts, Soy,
+            Target_Calories
+          )
+          VALUES (
+            $userId,
+            ${prefs.isVegan},
+            ${prefs.isVegetarian},
+            ${prefs.isKeto},
+            ${prefs.isLactose},
+            ${prefs.isHalal},
+            ${prefs.isKosher},
+            ${prefs.isDairyFree},
+            ${prefs.isLowCarbs},
+            ${prefs.isGlutenFree},
+            ${prefs.isPeanuts},
+            ${prefs.isEggs},
+            ${prefs.isFish},
+            ${prefs.isTreeNuts},
+            ${prefs.isSoy},
+            ${prefs.targetCalories.get}
+          );
+          """
+
   def checkLoginDetails(loginDetails: LoginData): Future[Option[Int]] = {
     val newLoginDetails = loginDetails.copy(username = loginDetails.username.split("@").head)
 
@@ -53,33 +82,7 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
 
         val preferences = registerData.preferences
 
-        SQL"""
-             INSERT INTO Preferences(
-               UserID, Vegan, Vegetarian, Keto,
-               Lactose, Halal, Kosher, Dairy_free,
-               Low_carbs, Gluten_free, Peanuts,
-               Eggs, Fish, Tree_nuts, Soy,
-               Target_Calories
-             )
-             VALUES (
-               ${usersInsert.get},
-               ${preferences.isVegan},
-               ${preferences.isVegetarian},
-               ${preferences.isKeto},
-               ${preferences.isLactose},
-               ${preferences.isHalal},
-               ${preferences.isKosher},
-               ${preferences.isDairyFree},
-               ${preferences.isLowCarbs},
-               ${preferences.isGlutenFree},
-               ${preferences.isPeanuts},
-               ${preferences.isEggs},
-               ${preferences.isFish},
-               ${preferences.isTreeNuts},
-               ${preferences.isSoy},
-               ${preferences.targetCalories.get}
-             );
-             """.executeInsert()
+        insertPrefsQuery(usersInsert.get.toString, preferences).execute()
 
         usersInsert.nonEmpty
       }
