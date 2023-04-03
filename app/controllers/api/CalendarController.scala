@@ -247,7 +247,7 @@ class CalendarController @Inject()(
       }
   }
 
-  def updateMealSlot(mealSlotId: Int, newRecipeId: Int): Action[JsValue] = Action.async(parse.json) { request =>
+  def updateMealSlot(mealSlotId: Int, newRecipeId: Int): Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>

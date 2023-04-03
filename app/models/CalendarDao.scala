@@ -161,10 +161,10 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
 
         oldMeals.foreach { mealSlotId =>
           SQL"""
-                        UPDATE Meal_Slot
-                        SET Meal_Number = Meal_Number - 1
-                        WHERE TimetableID = $mealSlotId
-                        """.execute()
+                UPDATE Meal_Slot
+                SET Meal_Number = Meal_Number - 1
+                WHERE TimetableID = $mealSlotId
+                """.execute()
         }
 
         val newMeals =

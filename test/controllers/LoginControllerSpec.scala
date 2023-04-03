@@ -29,7 +29,7 @@ class LoginControllerSpec extends AnyFlatSpec with Matchers {
 
   "register" should "return an Ok response, stating the user has been added" in {
     when(databaseMock.addNewUser(registerDataExample))
-      .thenReturn(Future.successful(Some(1, 1)))
+      .thenReturn(Future.successful(true))
 
     val jsonBody = Json.parse(
       """{
@@ -44,12 +44,18 @@ class LoginControllerSpec extends AnyFlatSpec with Matchers {
         |    "isHalal": false,
         |    "isKosher": false,
         |    "isDairyFree": false,
-        |    "isLowCarbs": false
+        |    "isLowCarbs": false,
+        |    "isGlutenFree": false,
+        |    "isPeanuts": false,
+        |    "isEggs": false,
+        |    "isFish": false,
+        |    "isTreeNuts": false,
+        |    "isSoy": false
         |  }
         |}""".stripMargin
     )
 
-    val request = FakeRequest(POST, "/addMealSlot")
+    val request = FakeRequest(POST, "/register")
       .withHeaders("Content-type" -> "application/json")
       .withBody(jsonBody)
 
