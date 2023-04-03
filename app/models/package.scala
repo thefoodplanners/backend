@@ -111,4 +111,17 @@ package object models {
   object RegisterData {
     implicit val formats: OFormat[RegisterData] = Json.format[RegisterData]
   }
+
+  case class Ingredients(
+    ingredientId: Int,
+    name: String,
+    calories: Int,
+    fats: Double,
+    proteins: Double,
+    carbs: Double
+  )
+
+  object Ingredients {
+    implicit val formats: OFormat[Ingredients] = Json.format[Ingredients]
+  }
 }
