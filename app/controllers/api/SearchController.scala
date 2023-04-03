@@ -21,4 +21,8 @@ class SearchController @Inject()(
       .map(recipesWithImg => Ok(Json.toJson(recipesWithImg)))
   }
 
+  def searchForIngredients(query: String): Action[AnyContent] = Action.async {
+    database.searchForIngredients(query).map(ingredients => Ok(Json.toJson(ingredients)))
+  }
+
 }

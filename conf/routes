@@ -6,6 +6,8 @@
 
 ###
 #  summary: Fetch meal slots for given user.
+#  tags:
+#    - Calendar
 #  responses:
 #    200:
 #      description: 2D array of meal slots.
@@ -18,6 +20,8 @@ GET     /calendar/meals                     controllers.api.CalendarController.g
 
 ###
 #  summary: Add new meal slot to calendar.
+#  tags:
+#    - Calendar
 #  responses:
 #    200:
 #    description: Meal slot successfully created.
@@ -32,6 +36,8 @@ POST    /calendar/meals                     controllers.api.CalendarController.a
 
 ###
 #  summary: Update an existing meal slot with a new recipe.
+#  tags:
+#    - Calendar
 #  responses:
 #    200:
 #      description: Meal slot successfully updated.
@@ -44,6 +50,8 @@ PUT     /calendar/meals/:mealSlotId         controllers.api.CalendarController.u
 
 ###
 #  summary: Move a meal to another meal slot in the calendar.
+#  tags:
+#    - Calendar
 #  responses:
 #    200:
 #      description: Meal slot successfully moved.
@@ -60,6 +68,8 @@ POST    /calendar/meals/move                controllers.api.CalendarController.m
 
 ###
 #  summary: Delete an existing meal slot.
+#  tags:
+#    - Calendar
 #  responses:
 #    200:
 #      description: Meal slot successfully deleted.
@@ -72,6 +82,8 @@ DELETE  /calendar/meals/:mealSlotId         controllers.api.CalendarController.d
 
 ###
 #  summary: Produces list of recipes recommended for the given user.
+#  tags:
+#    - Calendar
 #  responses:
 #    200:
 #      description: List of recommended recipes.
@@ -82,6 +94,8 @@ GET     /calendar/meals/recommendation      controllers.api.CalendarController.g
 
 ###
 #  summary: Produces a generated 2D array of meal slots based on user preferences.
+#  tags:
+#    - Calendar
 #  responses:
 #    200:
 #      description: 2D array of meal slots.
@@ -94,6 +108,8 @@ GET     /calendar/meals/weekly-meal-plan    controllers.api.CalendarController.g
 
 ###
 #  summary: Fetches the target calories for a given user.
+#  tags:
+#    - User
 #  responses:
 #    200:
 #      description: Target calories value.
@@ -104,6 +120,8 @@ GET     /user/target-calories                  controllers.api.UserController.ge
 
 ###
 #  summary: Fetches the preferences for a given user.
+#  tags:
+#    - User
 #  responses:
 #    200:
 #      description: Preferences for user.
@@ -116,6 +134,8 @@ GET     /user/preferences                      controllers.api.UserController.ge
 
 ###
 #  summary: Fetches the preferences for a given user.
+#  tags:
+#    - User
 #  responses:
 #    200:
 #      description: Preferences for user.
@@ -132,16 +152,34 @@ POST    /user/preferences                      controllers.api.UserController.up
 
 ###
 #  summary: Returns list of recipes which fit the query.
+#  tags:
+#    - Search
 #  responses:
 #    200:
 #      description: List of recipes which fit the query.
+#      schema:
+#        $ref: '#/definitions/models.Recipe'
 ###
-GET     /search                             controllers.api.SearchController.searchForRecipes(query: String)
+GET     /search/recipe                         controllers.api.SearchController.searchForRecipes(query: String)
+
+###
+#  summary: Returns list of ingredients which fit the query.
+#  tags:
+#    - Search
+#  responses:
+#    200:
+#      description: List of recipes which fit the query.
+#      schema:
+#        $ref: '#/definitions/models.Ingredients'
+###
+GET     /search/ingredient                     controllers.api.SearchController.searchForIngredients(query: String)
 
 # Progress Chart endpoints
 
 ###
 #  summary: Fetch metrics (calories and macros) consumed by the user for a given time period. Week, Month, etc.
+#  tags:
+#    - Chart
 #  responses:
 #    200:
 #      description: Calories consumed by the user for a given time period.
@@ -154,6 +192,8 @@ GET     /chart/:dateType/:date/metrics      controllers.api.ProgressChartControl
 
 ###
 #  summary: Login.
+#  tags:
+#    - Login
 #  responses:
 #    200:
 #      description: Successfully logged in.
@@ -166,6 +206,8 @@ POST    /login                              controllers.api.LoginController.proc
 
 ###
 #  summary: Logout.
+#  tags:
+#    - Login
 #  responses:
 #    200:
 #      description: Successfully logged out.
@@ -174,6 +216,8 @@ GET     /logout                             controllers.api.LoginController.logo
 
 ###
 #  summary: Register new user.
+#  tags:
+#    - Login
 #  responses:
 #    200:
 #      description: success

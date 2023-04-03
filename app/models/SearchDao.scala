@@ -1,7 +1,6 @@
 package models
 
 import anorm._
-import org.joda.time.LocalDate
 import play.api.db.Database
 
 import javax.inject.Inject
@@ -13,6 +12,18 @@ class SearchDao @Inject()(
   calendarDao: CalendarDao
 )
   (databaseExecutionContext: DatabaseExecutionContext) {
+
+  val ingredientsParser = (
+    SqlParser.int("IngredientID") ~
+      SqlParser.str("Name") ~
+      SqlParser.int("Calories") ~
+      SqlParser.double("Fats") ~
+      SqlParser.double("Proteins") ~
+      SqlParser.double("Carbohydrates")
+  ) map {
+    case ingredientId ~ name ~ calories ~ fats ~ proteins ~ carbs =>
+      Ingredients(ingredientId, name, calories, fats, proteins, carbs)
+  }
 
   def searchForRecipes(query: String): Future[Seq[Recipe]] = {
     Future {
@@ -26,4 +37,15 @@ class SearchDao @Inject()(
     }(databaseExecutionContext)
   }
 
+  def searchForIngredients(query: String): Future[Seq[Ingredients]] = {
+    Future {
+      db.withConnection { implicit conn =>
+        val queryWithWildcard: String = s"%$query%"
+        SQL"""
+           SELECT * FROM Ingredients
+           WHERE Name LIKE $queryWithWildcard;
+           """.as(ingredientsParser.*)
+      }
+    }(databaseExecutionContext)
+  }
 }
