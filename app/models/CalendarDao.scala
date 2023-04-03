@@ -222,11 +222,11 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
    * @return List of all the recipes from the database that correspond with the preference
    *         of the user
    */
-  def fetchRecommendations(userId: String, dateOpt: Option[String]): Future[Seq[Recipe]] = {
+  def fetchRecommendations(userId: String, dateOpt: Option[String], fatsOpt: Option[Double], proteinsOpt: Option[Double], carbsOpt: Option[Double]): Future[Seq[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
 
-        val addQuery = dateOpt.map { date =>
+        val addCaloriesQuery = dateOpt.map { date =>
           val targetCalories =
             SQL"""
                   SELECT Target_Calories
@@ -247,6 +247,18 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
           val caloriesLeft = targetCalories - totalCaloriesForDay.getOrElse(0)
 
           s"AND Calories <= '$caloriesLeft'"
+        }.getOrElse("")
+
+        val addFatsQuery = fatsOpt.map { fats =>
+          s"AND Fats <= '$fats'"
+        }.getOrElse("")
+
+        val addProteinsQuery = proteinsOpt.map { proteins =>
+          s"AND Proteins <= '$proteins'"
+        }.getOrElse("")
+
+        val addCarbsQuery = carbsOpt.map { carbs =>
+          s"AND Carbohydrates <= '$carbs'"
         }.getOrElse("")
 
         SQL"""
@@ -271,7 +283,10 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
                 (R.Fish OR (NOT P.Fish)) AND
                 (R.Tree_nuts OR (NOT P.Tree_nuts)) AND
                 (R.Soy OR (NOT P.Soy))
-                #$addQuery
+                #$addCaloriesQuery
+                #$addFatsQuery
+                #$addProteinsQuery
+                #$addCarbsQuery
               ORDER BY RAND();
              """.as(recipeParser.*)
       }

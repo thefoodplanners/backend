@@ -90,7 +90,7 @@ DELETE  /calendar/meals/:mealSlotId         controllers.api.CalendarController.d
 #    401:
 #      description: Not logged in.
 ###
-GET     /calendar/meals/recommendation      controllers.api.CalendarController.getRecommendations(date: String)
+GET     /calendar/meals/recommendation      controllers.api.CalendarController.getRecommendations(date: String, fats: Option[Double], proteins: Option[Double], carbohydrates: Option[Double])
 
 ###
 #  summary: Produces a generated 2D array of meal slots based on user preferences.
