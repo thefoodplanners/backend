@@ -70,7 +70,7 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
   private val movedMealSlotParser = (
     SqlParser.date("Date") ~
       SqlParser.int("Meal_Number")
-  ) map {
+    ) map {
     case date ~ mealNum =>
       MovedMealSlot(0, date, mealNum)
   }
@@ -140,6 +140,13 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
+  /**
+   * Changes the meal number and date of the meal slot being moved.
+   *
+   * @param userId           Id of the user.
+   * @param newMovedMealSlot New position of meal slot.
+   * @return How many rows were updated. Should be 1.
+   */
   def moveMealSlot(userId: String, newMovedMealSlot: MovedMealSlot): Future[Int] = {
     Future {
       db.withConnection { implicit conn =>
@@ -293,6 +300,14 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
+  /**
+   * Fill a given week in the calendar with generated meals.
+   *
+   * @param userId    Id of user.
+   * @param date      Date inside of week to be filled.
+   * @param mealSlots List of meal slots that are added to database.
+   * @return Whether adding meals was successful.
+   */
   def storeGeneratedMealPlan(userId: String, date: LocalDate, mealSlots: Seq[FetchedMealSlot]): Future[Boolean] = {
     Future {
       db.withConnection { implicit conn =>

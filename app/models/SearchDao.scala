@@ -7,13 +7,16 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
 
+/**
+ * DAO class for accessing the SQL database relating to search queries.
+ */
 class SearchDao @Inject()(
   db: Database,
   calendarDao: CalendarDao
 )
   (databaseExecutionContext: DatabaseExecutionContext) {
 
-  val ingredientsParser = (
+  private val ingredientsParser = (
     SqlParser.int("IngredientID") ~
       SqlParser.str("Name") ~
       SqlParser.int("Calories") ~
@@ -25,6 +28,11 @@ class SearchDao @Inject()(
       Ingredients(ingredientId, name, calories, fats, proteins, carbs)
   }
 
+  /**
+   * Fetches list of recipes with satisfy query.
+   * @param query Query string.
+   * @return List of recipes.
+   */
   def searchForRecipes(query: String): Future[Seq[Recipe]] = {
     Future {
       db.withConnection { implicit conn =>
@@ -37,6 +45,11 @@ class SearchDao @Inject()(
     }(databaseExecutionContext)
   }
 
+  /**
+   * Fetches list of ingredients with satisfy query.
+   * @param query Query string.
+   * @return List of ingredients.
+   */
   def searchForIngredients(query: String): Future[Seq[Ingredients]] = {
     Future {
       db.withConnection { implicit conn =>

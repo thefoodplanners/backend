@@ -46,6 +46,12 @@ class CalendarController @Inject()(
       }
   }
 
+  /**
+   * Generate a week's worth of meals for a given week.
+   *
+   * @param date Week to be generated for.
+   * @return Ok response stating that generated meals are now in the database.
+   */
   def generateWeeklyMealPlan(date: String): Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
@@ -80,6 +86,15 @@ class CalendarController @Inject()(
       }
   }
 
+  /**
+   * Generate a meal plan for a single day.
+   *
+   * @param recipesByMealType Maps between recipes and what their meal type is (breakfast, lunch, dinner).
+   * @param maxCalories       Max amount of calories user can have for a day.
+   * @param lastMealType      Picks whether breakfast, lunch or dinner is generated last.
+   * @param rand              Random object.
+   * @return List of recipes generated for the day.
+   */
   private def dayMealPlan(
     recipesByMealType: Map[String, Seq[Recipe]],
     maxCalories: Int,
@@ -88,13 +103,14 @@ class CalendarController @Inject()(
   ): Seq[Recipe] = {
     val mealTypes = Seq("Breakfast", "Lunch", "Dinner")
 
+    // Randomly pick first two recipes
     val randomRecipes = mealTypes
       .filterNot(_ == lastMealType)
       .map(mealType => getRandomElem(recipesByMealType(mealType), rand))
 
     val caloriesLeft = maxCalories - randomRecipes.map(_.calories).sum
+    // Picks last recipe based on calories left that do not go over max calories limit
     val lastRecipe = getRandomElem(recipesByMealType(lastMealType).filter(_.calories <= caloriesLeft), rand)
-
 
     (randomRecipes :+ lastRecipe).sortBy { recipe =>
       recipe.mealType match {
@@ -106,9 +122,24 @@ class CalendarController @Inject()(
     }
   }
 
+  /**
+   * Generic method for picking random element from list.
+   * No built-in method for this.
+   *
+   * @param seq    List.
+   * @param random Random object.
+   * @tparam A Generic type.
+   * @return Random element from list.
+   */
   private def getRandomElem[A](seq: Seq[A], random: Random): A =
     seq(random.nextInt(seq.length))
 
+  /**
+   * Called when a meal slot is moved to another position in the calendar.
+   * Updates database with this change in position.
+   *
+   * @return Response on whether the meal slot was successfully moved in the database.
+   */
   def moveMealSlot: Action[JsValue] = Action.async(parse.json) { request =>
     request.session
       .get(SESSION_KEY)
@@ -159,9 +190,16 @@ class CalendarController @Inject()(
       }
   }
 
+  /**
+   * Attaches base64 encoded images.
+   *
+   * @param recipes List of recipes which have paths to images.
+   * @return List of recipes which have the actual base64 encoded image.
+   */
   def mealSlotImageRefToString(recipes: Seq[Recipe]): Future[Seq[Recipe]] = {
     val imageRefs: Seq[String] = recipes.map(_.imageRef)
 
+    // Fetches images from path and stores in local directory
     imageDao.fetchImages(imageRefs).map { _ =>
       val nameWithImageString = imageDao.imagesToString
 
@@ -200,6 +238,11 @@ class CalendarController @Inject()(
     }
   }
 
+  /**
+   * Adds given meal slot to database.
+   *
+   * @return Response on whether meal slot was successfully added to database.
+   */
   def addMealSlot(): Action[JsValue] = Action.async(parse.json) { request =>
     // Fetch user id from session cookie
     request.session
@@ -228,12 +271,16 @@ class CalendarController @Inject()(
       }
   }
 
+  /**
+   * Deletes a given meal slot from the database.
+   *
+   * @param mealSlotId Id of the meal slot to be deleted.
+   * @return Response on whether meal slot was successfully deleted.
+   */
   def deleteMealSlot(mealSlotId: Int): Action[AnyContent] = Action.async { request =>
-    // Fetch user id from session cookie
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        // Convert request body json to case class
         database
           .deleteMealSlot(userId, mealSlotId)
           .map { rowsAffected =>
@@ -247,6 +294,13 @@ class CalendarController @Inject()(
       }
   }
 
+  /**
+   * Updates meal slot in database with new recipe.
+   *
+   * @param mealSlotId  Id of meal slot to be updated.
+   * @param newRecipeId Id of new recipe.
+   * @return Response on whether meal was successfully updated.
+   */
   def updateMealSlot(mealSlotId: Int, newRecipeId: Int): Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
@@ -261,9 +315,4 @@ class CalendarController @Inject()(
         Future.successful(Unauthorized(UNAUTH_MSG))
       }
   }
-
-  def testImage: Action[AnyContent] = Action {
-    Ok.sendFile(new File("./public/images/cat.jpg"))
-  }
-
 }

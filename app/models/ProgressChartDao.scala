@@ -8,6 +8,9 @@ import javax.inject.Inject
 import scala.concurrent.Future
 import scala.language.postfixOps
 
+/**
+ * DAO class for accessing the SQL database relating to progress chart queries.
+ */
 class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecutionContext) {
 
   private val metricsParser = (
@@ -21,6 +24,14 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
       Metrics(date, totalCalories, totalFats, totalProteins, totalCarbs)
   }
 
+  /**
+   * Fetches metrics (calories, fats, proteins and carbs) from database.
+   *
+   * @param userId   Id of user.
+   * @param dateType Type of date. Day/week/month/year.
+   * @param date     Date inside date type to be queried.
+   * @return Metrics case class with label.
+   */
   def fetchMetrics(userId: String, dateType: String, date: String): Future[MetricsWithLabel] = {
     Future {
       db.withConnection { implicit conn =>
@@ -28,7 +39,7 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
 
         val sqlQuery = dateType match {
           case "day" =>
-              SQL"""
+            SQL"""
                   SELECT
                     CONCAT('Meal ', Meal_Number) AS Date_Name,
                     Calories AS Total_Cals,
@@ -104,6 +115,7 @@ class ProgressChartDao @Inject()(db: Database)(databaseExecutionContext: Databas
 
         val metrics = sqlQuery.as(metricsParser.*)
 
+        // Format date labels for easier readability.
         val label: String = dateType match {
           case "day" => localDate.toString("EEE (MMM dd yyyy)")
           case "week" => s"${localDate.toString("MMM dd yyyy")} - ${localDate.plusDays(6).toString("MMM dd yyyy")}"

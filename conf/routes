@@ -233,9 +233,6 @@ POST    /register                           controllers.api.LoginController.regi
 ### NoDocs ###
 GET     /test                               controllers.api.LoginController.test
 
-### NoDocs ###
-GET     /test-image                         controllers.api.CalendarController.testImage
-
 # Map static resources from the /public folder to the /assets URL path
 ### NoDocs ###
 GET     /assets/*file                       controllers.Assets.versioned(file)

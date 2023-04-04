@@ -7,6 +7,9 @@ import play.api.mvc._
 import javax.inject._
 import scala.concurrent.{ ExecutionContext, Future }
 
+/**
+ * This controller handles http requests based on the user.
+ */
 class UserController @Inject()(
   cc: ControllerComponents,
   database: UserDao,
@@ -14,6 +17,11 @@ class UserController @Inject()(
   (implicit ec: ExecutionContext)
   extends AbstractController(cc) {
 
+  /**
+   * Get target calories for a given user.
+   *
+   * @return Response on daily target calorie.
+   */
   def getTargetCalories: Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
@@ -25,6 +33,11 @@ class UserController @Inject()(
       }
   }
 
+  /**
+   * Get preferences for a given user. E.g. Vegan, Vegetarian.
+   *
+   * @return Response on preferences.
+   */
   def getPreferences: Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
@@ -36,6 +49,11 @@ class UserController @Inject()(
       }
   }
 
+  /**
+   * Updates preferences in database for a given user.
+   *
+   * @return Response on whether preferences were successfully updated.
+   */
   def updatePreferences(): Action[JsValue] = Action.async(parse.json) { request =>
     request.session
       .get(SESSION_KEY)

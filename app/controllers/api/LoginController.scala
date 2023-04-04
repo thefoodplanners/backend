@@ -41,10 +41,19 @@ class LoginController @Inject()(
       }
   }
 
+  /**
+   * Logs out user.
+   *
+   * @return Response stating user has successfully logged out.
+   */
   def logout: Action[AnyContent] = Action {
     Ok("Successfully logged out.").withNewSession
   }
 
+  /**
+   * Registers new user by adding them to the database.
+   * @return Response on whether user was successfully added to the database.
+   */
   def register: Action[JsValue] = Action.async(parse.json) { request =>
     Json.fromJson[RegisterData](request.body)
       .asOpt
@@ -58,6 +67,10 @@ class LoginController @Inject()(
       }
   }
 
+  /**
+   * Check whether user is logged in or not.
+   * @return Response on whether user is logged in or not.
+   */
   def test: Action[AnyContent] = Action { request =>
     request.session
       .get(SESSION_KEY)
