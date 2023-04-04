@@ -133,58 +133,6 @@ class CalendarDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExec
     }(databaseExecutionContext)
   }
 
-  def moveMealSlot(userId: String, newMovedMealSlot: MovedMealSlot): Future[Int] = {
-    Future {
-      db.withConnection { implicit conn =>
-        val oldMovedMealSlot =
-          SQL"""
-                SELECT Date, Meal_Number
-                FROM Meal_Slot
-                WHERE TimetableID = ${newMovedMealSlot.mealSlotId} AND
-                UserID = $userId;
-                """.as(movedMealSlotParser.single)
-
-        val oldMeals =
-          SQL"""
-               SELECT TimetableID
-               FROM Meal_Slot
-               WHERE Date = ${oldMovedMealSlot.date} AND
-               Meal_Number >= ${oldMovedMealSlot.mealNum};
-               """.as(SqlParser.scalar[Int].*)
-
-        oldMeals.foreach { mealSlotId =>
-          SQL"""
-                        UPDATE Meal_Slot
-                        SET Meal_Number = Meal_Number - 1
-                        WHERE TimetableID = $mealSlotId
-                        """.execute()
-        }
-
-        val newMeals =
-          SQL"""
-                SELECT TimetableID
-                FROM Meal_Slot
-                WHERE Date = ${newMovedMealSlot.date} AND
-                Meal_Number >= ${newMovedMealSlot.mealNum};
-                """.as(SqlParser.scalar[Int].*)
-
-        newMeals.foreach { mealSlotId =>
-          SQL"""
-                UPDATE Meal_Slot
-                SET Meal_Number = Meal_Number + 1
-                WHERE TimetableID = $mealSlotId
-                """.execute()
-        }
-
-        SQL"""
-              UPDATE Meal_Slot
-              SET Date = ${newMovedMealSlot.date}, Meal_Number = ${newMovedMealSlot.mealNum}
-              WHERE TimetableID = ${newMovedMealSlot.mealSlotId};
-           """.executeUpdate()
-      }
-    }(databaseExecutionContext)
-  }
-
   /**
    * Fetches all the meal slots for a given week and given user.
    *

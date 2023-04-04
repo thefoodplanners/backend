@@ -43,22 +43,6 @@ POST    /calendar/meals                     controllers.api.CalendarController.a
 PUT     /calendar/meals/:mealSlotId         controllers.api.CalendarController.updateMealSlot(mealSlotId: Int, newRecipeId: Int)
 
 ###
-#  summary: Move a meal to another meal slot in the calendar.
-#  responses:
-#    200:
-#      description: Meal slot successfully moved.
-#    400:
-#      description: Error in processing json body.
-#    401:
-#      description: Not logged in.
-#  parameters:
-#    - name: body
-#      schema:
-#        $ref: '#/definitions/models.MovedMealSlot'
-###
-POST    /calendar/meals/move                controllers.api.CalendarController.moveMealSlot
-
-###
 #  summary: Delete an existing meal slot.
 #  responses:
 #    200:
