@@ -4,7 +4,6 @@ import java.util.Date
 
 package object models {
   val SESSION_KEY = "USERID"
-  val IMAGES_PATH = "./public/images"
   val UNAUTH_MSG = "You are not logged in."
 
   case class Recipe(
@@ -20,7 +19,7 @@ package object models {
     proteins: Float,
     carbohydrates: Float,
     preferences: Preferences,
-    imageRef: String
+    imageUrl: String
   )
 
   object Recipe {

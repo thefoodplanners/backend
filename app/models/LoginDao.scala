@@ -79,7 +79,6 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
         val isAuthorised = hashedPassword
           .filter { case (_, hashedPassword) => BCrypt.checkpw(loginDetails.password, hashedPassword) }
           .map(_._1)
-
         isAuthorised
       }
     }(databaseExecutionContext)
@@ -95,7 +94,6 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
     Future {
       db.withConnection { implicit conn =>
         val hashedPassword = BCrypt.hashpw(registerData.password, BCrypt.gensalt())
-
         val usersInsert: Option[Long] =
           SQL"""
                INSERT INTO Users(Username, Password, Email)
@@ -103,9 +101,7 @@ class LoginDao @Inject()(db: Database)(databaseExecutionContext: DatabaseExecuti
                """.executeInsert()
 
         val preferences = registerData.preferences
-
         insertPrefsQuery(usersInsert.get.toString, preferences).execute()
-
         usersInsert.nonEmpty
       }
     }(databaseExecutionContext)

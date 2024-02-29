@@ -1,7 +1,7 @@
 package controllers.api
 
 import models.{ LoginDao, LoginData, RegisterData, SESSION_KEY }
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{ JsError, JsValue, Json }
 import play.api.mvc._
 
 import javax.inject._
@@ -25,8 +25,7 @@ class LoginController @Inject()(
    * @return Http response on the status of the login process.
    */
   def processLogin: Action[JsValue] = Action.async(parse.json) { request =>
-    Json.fromJson[LoginData](request.body)
-      .asOpt
+    request.body.validate[LoginData]
       .map(database.checkLoginDetails)
       .map(_.map { userIdOpt =>
         if (userIdOpt.nonEmpty) {
@@ -34,11 +33,13 @@ class LoginController @Inject()(
             .withSession(SESSION_KEY -> userIdOpt.get.toString)
         }
         else Unauthorized("Username and/or password is incorrect.")
-      }
-      )
-      .getOrElse {
-        Future.successful(BadRequest("Error in login form."))
-      }
+      })
+      .recoverTotal(error => Future.successful(BadRequest(
+        Json.obj(
+          "error" -> "JSON parse",
+          "message" -> JsError.toJson(error)
+        )
+      )))
   }
 
   /**
@@ -52,6 +53,7 @@ class LoginController @Inject()(
 
   /**
    * Registers new user by adding them to the database.
+   *
    * @return Response on whether user was successfully added to the database.
    */
   def register: Action[JsValue] = Action.async(parse.json) { request =>
@@ -69,6 +71,7 @@ class LoginController @Inject()(
 
   /**
    * Check whether user is logged in or not.
+   *
    * @return Response on whether user is logged in or not.
    */
   def test: Action[AnyContent] = Action { request =>

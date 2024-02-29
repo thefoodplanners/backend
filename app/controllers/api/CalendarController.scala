@@ -1,11 +1,11 @@
 package controllers.api
 
+import controllers.customActions.AuthenticatedUserAction
 import models._
 import org.joda.time.LocalDate
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{ JsError, JsValue, Json }
 import play.api.mvc._
 
-import java.io.File
 import javax.inject._
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Random
@@ -17,7 +17,6 @@ import scala.util.Random
 class CalendarController @Inject()(
   cc: ControllerComponents,
   database: CalendarDao,
-  imageDao: ImageDao,
   databaseUser: UserDao
 )
   (implicit ec: ExecutionContext)
@@ -29,17 +28,19 @@ class CalendarController @Inject()(
    * @return HTTP response consisting of 2D array of all the recommended
    *         recipes, split into groups of 3.
    */
-  def getRecommendations(date: String, fats: Option[Double], proteins: Option[Double], carbohydrates: Option[Double]): Action[AnyContent] = Action.async { request =>
+  def getRecommendations(
+    date: String,
+    fats: Option[Double],
+    proteins: Option[Double],
+    carbohydrates: Option[Double]
+  ): Action[AnyContent] = Action.async { request =>
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        // Fetch recipes from database and split it into groups of 3.
-        database.fetchRecommendations(userId, Some(date), fats, proteins, carbohydrates).flatMap { recipes =>
-          mealSlotImageRefToString(recipes).map { recipesWithImg =>
-            val splitRecipes = recipesWithImg.grouped(3).toSeq
-            Ok(Json.toJson(splitRecipes))
-          }
-        }
+        for {
+          recipes <- database.fetchRecommendations(userId, Some(date), fats, proteins, carbohydrates)
+          splitRecipes = recipes.grouped(3).toSeq
+        } yield Ok(Json.toJson(splitRecipes))
       }
       .getOrElse {
         Future.successful(Unauthorized(UNAUTH_MSG))
@@ -56,30 +57,28 @@ class CalendarController @Inject()(
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        val localDate = LocalDate.parse(date)
+        for {
+          maxCalories <- databaseUser.fetchTargetCalories(userId)
+          recipes <- database.fetchRecommendations(userId, None, None, None, None)
 
-        databaseUser.fetchTargetCalories(userId).flatMap { maxCalories =>
-          database.fetchRecommendations(userId, None, None, None, None).flatMap { recipes =>
-            val recipesByMealType = recipes.groupBy(_.mealType)
-            val weeklyMeals = Seq.tabulate(7) { dayIndex =>
-              val rand = Random
-              val pick = rand.nextInt(3)
-              val dayMeal = pick match {
-                case 0 => dayMealPlan(recipesByMealType, maxCalories, "Breakfast", rand)
-                case 1 => dayMealPlan(recipesByMealType, maxCalories, "Lunch", rand)
-                case 2 => dayMealPlan(recipesByMealType, maxCalories, "Dinner", rand)
-              }
-              dayMeal.zipWithIndex.map { case (recipe, mealNumIndex) =>
-                FetchedMealSlot(0, localDate.plusDays(dayIndex).toDate, mealNumIndex + 1, recipe)
-              }
-            }.flatten
+          localDate = LocalDate.parse(date)
 
-            database.storeGeneratedMealPlan(userId, localDate, weeklyMeals).map { _ =>
-              Ok("Generated meals successfully added.")
+          recipesByMealType = recipes.groupBy(_.mealType)
+          weeklyMeals = Seq.tabulate(7) { dayIndex =>
+            val rand = new Random
+            val pick = rand.nextInt(3)
+            val dayMeal = pick match {
+              case 0 => dayMealPlan(recipesByMealType, maxCalories, "Breakfast", rand)
+              case 1 => dayMealPlan(recipesByMealType, maxCalories, "Lunch", rand)
+              case 2 => dayMealPlan(recipesByMealType, maxCalories, "Dinner", rand)
             }
+            dayMeal.zipWithIndex.map { case (recipe, mealNumIndex) =>
+              FetchedMealSlot(0, localDate.plusDays(dayIndex).toDate, mealNumIndex + 1, recipe)
+            }
+          }.flatten
 
-          }
-        }
+          _ <- database.storeGeneratedMealPlan(userId, localDate, weeklyMeals)
+        } yield Ok
       }
       .getOrElse {
         Future.successful(Unauthorized(UNAUTH_MSG))
@@ -144,18 +143,20 @@ class CalendarController @Inject()(
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        Json.fromJson[MovedMealSlot](request.body)
-          .asOpt
-          .map { movedMealSlot =>
+        request.body.validate[MovedMealSlot].map { movedMealSlot =>
             database.moveMealSlot(userId, movedMealSlot).map { rowsUpdated =>
               if (rowsUpdated == 1) Ok("Meal slot successfully moved.")
               else if (rowsUpdated == 0) InternalServerError("Meal slot not moved.")
               else InternalServerError("Multiple meal slots moved.")
             }
           }
-          .getOrElse {
-            Future.successful(BadRequest("Error in processing json body."))
-          }
+          .recoverTotal(error => Future.successful(BadRequest(
+            Json.obj(
+              "error" -> "JSON parse",
+              "message" -> JsError.toJson(error)
+            )
+          )))
+
       }
       .getOrElse {
         Future.successful(Unauthorized(UNAUTH_MSG))
@@ -172,45 +173,14 @@ class CalendarController @Inject()(
     request.session
       .get(SESSION_KEY)
       .map { userId =>
-        database.fetchAllMealSlots(userId, weekDateString).flatMap { mealSlots =>
-          val mealSlotsWithImg = mealSlotImageRefToString(mealSlots.map(_.recipe)).map { recipes =>
-            mealSlots.zip(recipes).map { case (mealSlot, recipeWithImg) =>
-              mealSlot.copy(recipe = recipeWithImg)
-            }
-          }
-
-          mealSlotsWithImg.map { mealSlots =>
-            val mealSlotsArray = mealSlotToArray(mealSlots)
-            Ok(Json.toJson(mealSlotsArray))
-          }
-        }
+        for {
+          mealSlots <- database.fetchAllMealSlots(userId, weekDateString)
+          mealSlotArray = mealSlotToArray(mealSlots)
+        } yield Ok(Json.toJson(mealSlotArray))
       }
       .getOrElse {
         Future.successful(Unauthorized(UNAUTH_MSG))
       }
-  }
-
-  /**
-   * Attaches base64 encoded images.
-   *
-   * @param recipes List of recipes which have paths to images.
-   * @return List of recipes which have the actual base64 encoded image.
-   */
-  def mealSlotImageRefToString(recipes: Seq[Recipe]): Future[Seq[Recipe]] = {
-    val imageRefs: Seq[String] = recipes.map(_.imageRef)
-
-    // Fetches images from path and stores in local directory
-    imageDao.fetchImages(imageRefs).map { _ =>
-      val nameWithImageString = imageDao.imagesToString
-
-      recipes.map { recipe =>
-        val fileName = recipe.imageRef.split("/").last
-        nameWithImageString
-          .get(fileName)
-          .map(imageString => recipe.copy(imageRef = imageString))
-          .getOrElse(recipe)
-      }
-    }
   }
 
   /**
