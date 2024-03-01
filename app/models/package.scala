@@ -1,10 +1,21 @@
+import play.api.db.Database
 import play.api.libs.json.{ Json, OFormat }
 
+import java.sql.Connection
 import java.util.Date
+import scala.concurrent.Future
 
 package object models {
   val SESSION_KEY = "USERID"
   val UNAUTH_MSG = "You are not logged in."
+
+  final def DbConnection[T](
+    block: Connection => T
+  )(implicit
+    executor: DatabaseExecutionContext,
+    db: Database
+  ): Future[T] =
+    Future(db.withConnection(block))
 
   case class Recipe(
     id: Int,
