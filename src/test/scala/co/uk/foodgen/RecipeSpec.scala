@@ -235,7 +235,7 @@ object RecipeSpec extends IOSuite:
 
   recipeRoutesTest(
     "Recipe recommendations should return recipes that meet users dietary requirements"
-  ) { case (router@given HttpApp[IO], service@given RecipeService) =>
+  ) { case (router @ given HttpApp[IO], service @ given RecipeService) =>
     for
       _ <- addRecipe("recipe1", diets = List(Vegan, Vegetarian))
       _ <- addRecipe("recipe2", diets = List(Vegan))
@@ -256,7 +256,7 @@ object RecipeSpec extends IOSuite:
 
   recipeRoutesTest(
     "Recipe recommendations should return recipes in random at every call".only
-  ) { case (router@given HttpApp[IO], service@given RecipeService) =>
+  ) { case (router @ given HttpApp[IO], service @ given RecipeService) =>
     for
       _ <- addRecipe("recipe1", diets = List(Vegan, Vegetarian))
       _ <- addRecipe("recipe2", diets = List(Vegan))

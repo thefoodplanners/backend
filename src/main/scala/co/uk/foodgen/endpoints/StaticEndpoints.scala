@@ -2,12 +2,12 @@ package co.uk.foodgen.endpoints
 
 import cats.data.Ior
 import cats.effect.IO
+import cats.syntax.traverse.toTraverseOps
 import org.http4s.{ContextRoutes, HttpRoutes}
 import sttp.model.{HeaderNames, MediaType, StatusCode}
 import sttp.tapir.*
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.*
-import cats.syntax.traverse.toTraverseOps
 
 object StaticEndpoints extends HttpEndpoint:
 
