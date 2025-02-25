@@ -15,8 +15,34 @@ object LoginSpec extends IOSuite:
   private val app = (tx: Transactor[IO]) => Server.mainHttpRoutes(tx).orNotFound
   private def loginEndpointsTest = testWithDb(app)(name => expects => test(name)(expects))
 
+  loginEndpointsTest("Fail registering user if user is already registered") { implicit router =>
+    val resource = RegisterRequest(
+      email = "test@example.com",
+      username = "username1",
+      password = "password1",
+      targetCalories = None,
+      dietaryRequirements = List.empty
+    )
+    val request = Request[IO](POST, Uri.unsafeFromString(registerUrl))
+      .withEntity(resource)
+
+    for
+      _ <- LoginHelper.createUser(
+        email = "test@example.com",
+        username = "username1",
+        password = "password1",
+        targetCalories = None,
+        dietaryRequirements = List.empty
+      )
+      response <- router(request)
+      errorMessage <- response.as[String]
+      check = expect.eql(BadRequest, response.status) and
+        expect.eql("Username already exists", errorMessage)
+    yield check
+  }
+
   loginEndpointsTest("Successfully register the user") { implicit router =>
-    val resource = CreateUserRequest(
+    val resource = RegisterRequest(
       email = "test@example.com",
       username = "username1",
       password = "password1",

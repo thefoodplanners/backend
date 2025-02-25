@@ -21,6 +21,10 @@ package object service:
     def failIfFound(serviceError: ServiceError)(using transactor: Transactor[IO]): ServiceResult[Unit] =
       EitherT.apply(conn.tx.map(_.invert.toRight(serviceError)))
 
+  extension [A](eff: IO[A])
+    def toResult: ServiceResult[A] =
+      EitherT.liftF(eff)
+
   extension [A](opt: Option[A]) private def invert: Option[Unit] = opt.fold(Some(()))(_ => None)
 
 end service

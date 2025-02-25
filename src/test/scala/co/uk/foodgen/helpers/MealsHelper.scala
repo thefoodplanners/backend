@@ -1,7 +1,7 @@
 package co.uk.foodgen.helpers
 
 import cats.effect.IO
-import co.uk.foodgen.endpoints.{calendarMealsUrl, asString}
+import co.uk.foodgen.endpoints.{asString, calendarMealsUrl}
 import co.uk.foodgen.models.Recipe
 import co.uk.foodgen.payload.{CreateMealRequest, MealsResponse}
 import co.uk.foodgen.service.models.Period

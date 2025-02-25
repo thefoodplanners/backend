@@ -58,7 +58,7 @@ object RecipesDao:
     macrosFilter: MacrosFilter = MacrosFilter.empty,
     dietsFilter: List[DietaryRequirement] = Nil,
     limit: Int,
-    offset: Int
+    offset: Option[Int]
   ): ConnectionIO[List[Recipe]] =
     val queryWhere = query.map(q => fr"name like ${q + "%"}")
     val calories = macrosFilter.maxCalories.map(ca => fr"calories <= $ca")
@@ -75,10 +75,10 @@ object RecipesDao:
       fats
     )
 
-    (
-      selectRecipe ++
-        conditions ++
-        fr0"limit $limit offset $offset"
-    )
+    val withOffsetOrRandom = offset.fold(
+      fr0"order by random() limit $limit"
+    )(offset => fr0"limit $limit offset $offset")
+
+    (selectRecipe ++ conditions ++ withOffsetOrRandom)
       .query[Recipe]
       .to[List]

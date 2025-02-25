@@ -1,16 +1,17 @@
 package co.uk.foodgen.service
 
+import cats.data.OptionT
 import cats.effect.IO
-import cats.syntax.traverse.toTraverseOps
 import co.uk.foodgen.dao.UsersDao
 import co.uk.foodgen.endpoints
-import co.uk.foodgen.endpoints.encrypt
+import co.uk.foodgen.endpoints.Authentication
 import co.uk.foodgen.models.{DietaryRequirement, User}
 import co.uk.foodgen.service.errorModels.ServiceError
 import doobie.util.transactor.Transactor
-import org.mindrot.jbcrypt.BCrypt
-
-import java.time.Instant
+import tsec.authentication.AuthenticatedCookie
+import tsec.mac.jca.HMACSHA256
+import tsec.passwordhashers.PasswordHash
+import tsec.passwordhashers.jca.SCrypt
 
 final class LoginService(using Transactor[IO]):
 
@@ -25,7 +26,7 @@ final class LoginService(using Transactor[IO]):
       _ <- UsersDao
         .selectUser(username)
         .failIfFound(ServiceError.BadRequest("Username already exists"))
-      hashed = BCrypt.hashpw(password, BCrypt.gensalt(12))
+      hashed <- SCrypt.hashpw[IO](password).toResult
       user = User(
         id = User.Id(0),
         email = email,
@@ -38,9 +39,12 @@ final class LoginService(using Transactor[IO]):
     yield ()
 
   def login(username: String, password: String): IO[Option[String]] =
-    for
-      maybeUser <- UsersDao.selectUser(username).tx
-      sessionKey <- maybeUser
-        .filter(user => BCrypt.checkpw(password, user.password))
-        .traverse(user => encrypt.map(_.signToken(user.id.toString, Instant.now.toEpochMilli.toString)))
-    yield sessionKey
+    (for
+      user <- OptionT(UsersDao.selectUser(username).tx)
+      _ <- OptionT(SCrypt.checkpwBool[IO](password, PasswordHash(user.password)).map(Option.when(_)(())))
+      sessionCookie <- OptionT.liftF(Authentication.handler.authenticator.create(user.id))
+      sessionKey = sessionCookie.content
+    yield sessionKey).value
+
+  def logout(auth: AuthenticatedCookie[HMACSHA256, User.Id]): IO[Unit] =
+    Authentication.handler.authenticator.discard(auth).void

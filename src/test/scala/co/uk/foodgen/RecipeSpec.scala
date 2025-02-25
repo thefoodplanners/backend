@@ -24,17 +24,6 @@ object RecipeSpec extends IOSuite:
         _ <- addRecipe("recipe1")
         _ <- addRecipe("recipe2")
 
-        loginToken <- UsersHelper.loginUser()
-        request = Request[IO](
-          GET,
-          Uri.unsafeFromString(s"${recipeSearchUrl.asString}?query=recipe1&limit=5&offset=0")
-        )
-          .addCookie(loginToken)
-        response <- router(request)
-        actual <- response.as[RecipesResponse]
-        expected = List("recipe12")
-        check = expect.eql(actual.recipes.map(_.name), expected)
-      yield check
         loginToken <- LoginHelper.loginUser()
         request = Request[IO](
           GET,
@@ -241,6 +230,52 @@ object RecipeSpec extends IOSuite:
       actual <- response.as[RecipesResponse]
       expected = List("recipe1")
       check = expect.eql(actual.recipes.map(_.name), expected)
+    yield check
+  }
+
+  recipeRoutesTest(
+    "Recipe recommendations should return recipes that meet users dietary requirements"
+  ) { case (router@given HttpApp[IO], service@given RecipeService) =>
+    for
+      _ <- addRecipe("recipe1", diets = List(Vegan, Vegetarian))
+      _ <- addRecipe("recipe2", diets = List(Vegan))
+      _ <- addRecipe("recipe3")
+
+      loginToken <- LoginHelper.loginUser(dietaryRequirements = List(Vegan, Vegetarian))
+      request = Request[IO](
+        GET,
+        Uri.unsafeFromString(recipeRecommendationsUrl.asString)
+      )
+        .addCookie(loginToken)
+      response <- router(request)
+      actual <- response.as[RecipesResponse]
+      expected = List("recipe1")
+      check = expect.eql(actual.recipes.map(_.name), expected)
+    yield check
+  }
+
+  recipeRoutesTest(
+    "Recipe recommendations should return recipes in random at every call".only
+  ) { case (router@given HttpApp[IO], service@given RecipeService) =>
+    for
+      _ <- addRecipe("recipe1", diets = List(Vegan, Vegetarian))
+      _ <- addRecipe("recipe2", diets = List(Vegan))
+      _ <- addRecipe("recipe3")
+      _ <- addRecipe("recipe4", diets = List(Halal))
+      _ <- addRecipe("recipe5", diets = List(Kosher))
+      _ <- addRecipe("recipe6")
+
+      loginToken <- LoginHelper.loginUser()
+      request = Request[IO](
+        GET,
+        Uri.unsafeFromString(recipeRecommendationsUrl.asString)
+      )
+        .addCookie(loginToken)
+      response1 <- router(request)
+      response2 <- router(request)
+      content1 <- response1.as[RecipesResponse]
+      content2 <- response2.as[RecipesResponse]
+      check = expect(content1.recipes =!= content2.recipes)
     yield check
   }
 

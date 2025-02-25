@@ -17,9 +17,7 @@ import java.time.LocalDate
 object ProgressChartSpec extends IOSuite:
   private val app = (tx: Transactor[IO]) =>
     (
-      (new LoginEndpoints(tx).allRoutes <+>
-        (new CalendarEndpoints(tx).allRoutes <+>
-          new ProgressChartEndpoints(tx).allRoutes).withAuthentication).orNotFound,
+      Server.mainHttpRoutes(tx).orNotFound,
       new RecipeService(using tx),
       new MealService(using tx)
     )
