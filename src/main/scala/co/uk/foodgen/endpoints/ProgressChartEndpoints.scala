@@ -22,10 +22,10 @@ class ProgressChartEndpoints(transactor: Transactor[IO]):
   private val getFullMetrics = endpoint.get
     .in(progressChartUrl / path[Period]("period") / "metrics")
     .in(query[LocalDate]("date"))
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(jsonBody[FullMetricsResponse])
-    .serverLogicSuccess[IO] { case (period, date, userId) =>
+    .serverLogicSuccess[IO] { case (period, date, userId, _) =>
       progressChartService
         .fetchMetrics(
           date = date,

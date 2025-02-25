@@ -10,6 +10,8 @@ import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.jsonBody
 import sttp.tapir.server.http4s.*
+import tsec.authentication.AuthenticatedCookie
+import tsec.mac.jca.HMACSHA256
 
 class UserEndpoints(transactor: Transactor[IO]):
 
@@ -17,32 +19,33 @@ class UserEndpoints(transactor: Transactor[IO]):
 
   private val getTargetCalories = endpoint.get
     .in(targetCaloriesUrl)
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(jsonBody[TargetCaloriesResponse])
-    .serverLogicSuccess[IO](userId =>
+    .serverLogicSuccess[IO] { (userId, _) =>
       userService
         .getTargetCalories(userId)
         .map(TargetCaloriesResponse(_))
-    )
+    }
 
   private val getDietaryRequirements = endpoint.get
     .in(dietaryRequirementsUrl)
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(jsonBody[DietaryRequirementsPayload])
-    .serverLogicSuccess[IO](userId =>
+    .serverLogicSuccess[IO] { (userId, _) =>
       userService
         .getDietaryRequirements(userId)
         .map(DietaryRequirementsPayload(_))
-    )
+    }
 
   private val updateDietaryRequirements = endpoint.put
     .in(dietaryRequirementsUrl)
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .in(jsonBody[DietaryRequirementsPayload])
     .errorOut(statusCode(StatusCode.Unauthorized))
-    .serverLogicSuccess[IO] { (userId, request) =>
+    .out(statusCode(StatusCode.NoContent))
+    .serverLogicSuccess[IO] { (userId, _, request) =>
       userService.updateDietaryRequirements(request.dietaryRequirements, userId)
     }
 

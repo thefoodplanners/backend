@@ -22,10 +22,10 @@ class CalendarEndpoints(transactor: Transactor[IO]):
   private val getCalendarMeals = endpoint.get
     .in(calendarMealsUrl / path[Period]("period"))
     .in(query[LocalDate]("date"))
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(jsonBody[MealsResponse])
-    .serverLogicSuccess[IO] { case (period, date, userId) =>
+    .serverLogicSuccess[IO] { (period, date, userId, _) =>
       mealService
         .getAllMealsByPeriod(
           date = date,
@@ -38,10 +38,10 @@ class CalendarEndpoints(transactor: Transactor[IO]):
   private val createCalendarMeal = endpoint.post
     .in(calendarMealsUrl)
     .in(jsonBody[CreateMealRequest])
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(statusCode(StatusCode.Created))
-    .serverLogicSuccess[IO] { (request, userId) =>
+    .serverLogicSuccess[IO] { (request, userId, _) =>
       mealService
         .saveMeal(
           date = request.date,
@@ -55,10 +55,10 @@ class CalendarEndpoints(transactor: Transactor[IO]):
   private val updateCalendarMeal = endpoint.put
     .in(calendarMealsUrl / path[Meal.Id]("meal-id"))
     .in(query[Recipe.Id]("recipe-id"))
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(statusCode(StatusCode.NoContent))
-    .serverLogicSuccess[IO] { (mealId, recipeId, userId) =>
+    .serverLogicSuccess[IO] { (mealId, recipeId, userId, _) =>
       mealService.updateMealWithNewRecipe(
         mealId = mealId,
         recipeId = recipeId,
@@ -70,10 +70,10 @@ class CalendarEndpoints(transactor: Transactor[IO]):
     .in(calendarMealsUrl / path[Meal.Id]("meal-id") / "move")
     .in(query[LocalDate]("date"))
     .in(query[Int]("meal-number"))
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(statusCode(StatusCode.NoContent))
-    .serverLogicSuccess[IO] { (mealId, newDate, newMealNumber, userId) =>
+    .serverLogicSuccess[IO] { (mealId, newDate, newMealNumber, userId, _) =>
       mealService.moveMeal(
         mealId = mealId,
         newDate = newDate,
@@ -84,10 +84,10 @@ class CalendarEndpoints(transactor: Transactor[IO]):
 
   private val deleteCalendarMeal = endpoint.delete
     .in(calendarMealsUrl / path[Meal.Id]("meal-id"))
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(statusCode(StatusCode.NoContent))
-    .serverLogicSuccess[IO] { (mealId, userId) =>
+    .serverLogicSuccess[IO] { (mealId, userId, _) =>
       mealService.removeMeal(
         mealId = mealId,
         userId = userId

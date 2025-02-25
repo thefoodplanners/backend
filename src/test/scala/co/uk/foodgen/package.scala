@@ -2,13 +2,14 @@ package co.uk
 
 import cats.effect.{IO, Resource}
 import co.uk.foodgen.Server.setTransactor
-import co.uk.foodgen.endpoints.decryptUserIdFromCookie
+import co.uk.foodgen.endpoints.Authentication
 import co.uk.foodgen.models.User
 import com.dimafeng.testcontainers.{Container, PostgreSQLContainer}
 import doobie.syntax.connectionio.toConnectionIOOps
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
-import org.http4s.RequestCookie
+import org.http4s.Method.GET
+import org.http4s.{Request, RequestCookie, Uri}
 import org.testcontainers.utility.DockerImageName
 import weaver.{Expectations, SimpleIOSuite, TestName}
 
@@ -16,7 +17,7 @@ import scala.io.Source
 
 package object foodgen:
   trait IOSuite extends SimpleIOSuite:
-    override def maxParallelism: Int = 2
+    override def maxParallelism: Int = 3
   end IOSuite
 
   private val containerDef = PostgreSQLContainer.Def(
@@ -55,6 +56,11 @@ package object foodgen:
     yield ()
 
   def decryptUserIdFromCookieOrFail(cookie: RequestCookie): IO[User.Id] =
-    decryptUserIdFromCookie(cookie).map(_.get)
+    val dummyRequest = Request[IO](GET, Uri.unsafeFromString("/dummy")).addCookie(cookie)
+    Authentication.handler.authenticator
+      .extractAndValidate(dummyRequest)
+      .map(_.identity)
+      .value
+      .map(_.get)
 
 end foodgen

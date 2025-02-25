@@ -25,10 +25,10 @@ class RecipeEndpoints(transactor: Transactor[IO]):
     .in(query[Option[Float]]("max-fats"))
     .in(query[Int]("limit"))
     .in(query[Int]("offset"))
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(jsonBody[RecipesResponse])
-    .serverLogicSuccess[IO] { case (query, diets, maxCalories, maxCarbs, maxProteins, maxFats, limit, offset, _) =>
+    .serverLogicSuccess[IO] { case (query, diets, maxCalories, maxCarbs, maxProteins, maxFats, limit, offset, _, _) =>
       val macrosFilter = MacrosFilter(
         maxCalories = maxCalories,
         maxCarbs = maxCarbs,
@@ -50,14 +50,14 @@ class RecipeEndpoints(transactor: Transactor[IO]):
 
   private val recipeRecommendations = endpoint.get
     .in(recipeRecommendationsUrl)
-    .contextIn[User.Id]()
+    .contextIn[AuthInfo]()
     .errorOut(statusCode(StatusCode.Unauthorized))
     .out(jsonBody[RecipesResponse])
-    .serverLogicSuccess[IO](userId =>
+    .serverLogicSuccess[IO] { (userId, _) =>
       recipeService
         .recommendations(userId)
         .map(RecipesResponse(_))
-    )
+    }
 
   val allEndpoints = List(recipesSearch, recipeRecommendations)
 
