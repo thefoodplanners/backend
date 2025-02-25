@@ -7,7 +7,7 @@ import io.scalaland.chimney.Transformer
 import io.scalaland.chimney.syntax.transformInto
 import sttp.tapir.Schema
 
-case class FullMetricsResponse(
+final case class FullMetricsResponse(
   label: String,
   metrics: List[MetricsResponse]
 )
@@ -20,4 +20,4 @@ object FullMetricsResponse:
     )
 
   given Codec[FullMetricsResponse] = deriveCodec
-  given Schema[FullMetricsResponse] = Schema.derived
+  given Schema[FullMetricsResponse] = Schema.derived[FullMetricsResponse].modify(_.metrics)(_.copy(isOptional = false))

@@ -11,7 +11,7 @@ import sttp.tapir.Schema
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-case class MealResponse(
+final case class MealResponse(
   mealId: Meal.Id,
   mealNumber: Int,
   date: LocalDate,

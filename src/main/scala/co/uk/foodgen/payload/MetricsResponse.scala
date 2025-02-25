@@ -6,7 +6,7 @@ import io.circe.generic.semiauto.deriveCodec
 import io.scalaland.chimney.Transformer
 import sttp.tapir.Schema
 
-case class MetricsResponse(
+final case class MetricsResponse(
   label: String,
   totalCalories: Int,
   totalCarbohydrates: Float,

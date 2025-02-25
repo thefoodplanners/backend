@@ -8,7 +8,7 @@ import sttp.tapir.Schema
 
 import java.time.LocalDate
 
-case class CreateMealRequest(
+final case class CreateMealRequest(
   date: LocalDate,
   mealNumber: Option[Int],
   recipeId: Recipe.Id

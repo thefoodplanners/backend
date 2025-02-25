@@ -7,7 +7,7 @@ import io.scalaland.chimney.Transformer
 import io.scalaland.chimney.syntax.*
 import sttp.tapir.Schema
 
-case class MealsResponse(meals: List[MealResponse])
+final case class MealsResponse(meals: List[MealResponse])
 
 object MealsResponse:
   given Transformer[List[MealView], MealsResponse] = (views: List[MealView]) =>

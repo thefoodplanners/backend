@@ -5,7 +5,7 @@ import io.circe.syntax.EncoderOps
 import io.circe.{Codec, Decoder, Encoder}
 import sttp.tapir.Schema
 
-case class RecipesResponse(recipes: List[Recipe])
+final case class RecipesResponse(recipes: List[Recipe])
 
 object RecipesResponse:
   given Codec[RecipesResponse] = Codec.from(

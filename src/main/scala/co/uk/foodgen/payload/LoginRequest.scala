@@ -7,7 +7,7 @@ import org.http4s.EntityEncoder
 import org.http4s.circe.jsonEncoderOf
 import sttp.tapir.Schema
 
-case class LoginRequest(username: String, password: String)
+final case class LoginRequest(username: String, password: String)
 
 object LoginRequest:
   given EntityEncoder[IO, LoginRequest] = jsonEncoderOf[IO, LoginRequest]
