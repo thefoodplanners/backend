@@ -4,16 +4,17 @@ import cats.data.Kleisli
 import cats.effect.{IO, Resource}
 import cats.implicits.toSemigroupKOps
 import co.uk.foodgen.endpoints.*
+import co.uk.foodgen.endpoints.Authentication.*
 import com.comcast.ip4s.{ipv4, port}
 import com.zaxxer.hikari.HikariConfig
 import doobie.hikari.HikariTransactor
 import doobie.util.transactor.Transactor
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.middleware.CORS
+import org.http4s.{ContextRoutes, HttpRoutes}
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 object Server:
-
   def setTransactor(
     driverClass: String,
     jdbcUrl: String,
@@ -39,32 +40,44 @@ object Server:
     password = System.getenv("DB_PASSWORD")
   )
 
-  private def mainHttpApp(tx: Transactor[IO]) =
-    val loginEndpoints = new LoginEndpoints(tx)
-    val userEndpoints = new UserEndpoints(tx)
-    val recipeEndpoints = new RecipeEndpoints(tx)
-    val calendarEndpoints = new CalendarEndpoints(tx)
-    val progressChartEndpoints = new ProgressChartEndpoints(tx)
+  private def mainEndpoints(tx: Transactor[IO]): List[HttpEndpoint] =
+    List(
+      new LoginEndpoints(tx),
+      new UserEndpoints(tx),
+      new RecipeEndpoints(tx),
+      new CalendarEndpoints(tx),
+      new ProgressChartEndpoints(tx)
+    )
 
-    val fullEndpoints = loginEndpoints.allEndpoints ++
-      userEndpoints.allEndpoints ++
-      recipeEndpoints.allEndpoints ++
-      calendarEndpoints.allEndpoints ++
-      progressChartEndpoints.allEndpoints
+  private def buildHttpRoutes(
+    routes: List[HttpRoutes[IO]],
+    authRoutes: List[ContextRoutes[AuthInfo, IO]]
+  ): HttpRoutes[IO] =
+    val normalRoutes = routes.fold(HttpRoutes.empty[IO])(_ <+> _)
+    val authenticatedRoutes = authRoutes.fold(ContextRoutes.empty[AuthInfo, IO])(_ <+> _).withAuthentication
+    normalRoutes <+> authenticatedRoutes
+
+  def mainHttpRoutes(tx: Transactor[IO]): HttpRoutes[IO] =
+    val routes = mainEndpoints(tx)
+    val normalRoutes = routes.flatMap(_.routes.left)
+    val authRoutes = routes.flatMap(_.routes.right)
+    buildHttpRoutes(normalRoutes, authRoutes)
+
+  private def serverHttpApp(tx: Transactor[IO]) =
+    val allEndpoints = StaticEndpoints :: mainEndpoints(tx)
+
+    val fullEndpoints = allEndpoints.flatMap(_.endpoints)
 
     val docsRoutes = Http4sServerInterpreter[IO]().toRoutes(DocsEndpoints.docs(fullEndpoints))
 
-    val authenticatedRoutes =
-      (
-        userEndpoints.allRoutes <+>
-          recipeEndpoints.allRoutes <+>
-          calendarEndpoints.allRoutes <+>
-          progressChartEndpoints.allRoutes
-      ).withAuthentication
+    val routes = allEndpoints.flatMap(_.routes.left)
+    val authRoutes = allEndpoints.flatMap(_.routes.right)
+    val mainRoutes = buildHttpRoutes(routes, authRoutes)
 
-    val corsRoutes = CORS.policy.withAllowOriginAll
-      .withAllowCredentials(false)
-      .apply(loginEndpoints.allRoutes <+> authenticatedRoutes)
+    val corsRoutes = CORS.policy
+      .withAllowOriginHost(origin => origin.port.contains(5173))
+      .withAllowCredentials(true)
+      .apply(mainRoutes)
 
     (docsRoutes <+> corsRoutes).orNotFound
 
@@ -75,6 +88,6 @@ object Server:
         .default[IO]
         .withHost(ipv4"0.0.0.0")
         .withPort(port"9000")
-        .withHttpApp(mainHttpApp(tx))
+        .withHttpApp(serverHttpApp(tx))
         .build
     yield server).useForever

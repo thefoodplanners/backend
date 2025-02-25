@@ -5,21 +5,17 @@ import cats.effect.IO
 import cats.implicits.toSemigroupKOps
 import co.uk.foodgen.endpoints.withAuthentication
 import co.uk.foodgen.helpers.RecipesHelper.addRecipe
-import endpoints.*
-import co.uk.foodgen.helpers.UsersHelper
-import co.uk.foodgen.models.DietaryRequirement
+import co.uk.foodgen.models.DietaryRequirement.*
 import co.uk.foodgen.payload.RecipesResponse
 import co.uk.foodgen.service.RecipeService
 import doobie.util.transactor.Transactor
 import org.http4s.Method.GET
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.{HttpApp, Request, Response, Uri}
+import cats.syntax.eq.catsSyntaxEq
 
 object RecipeSpec extends IOSuite:
-  private val app = (tx: Transactor[IO]) =>
-    (new LoginEndpoints(tx).allRoutes <+>
-      new RecipeEndpoints(tx).allRoutes.withAuthentication).orNotFound ->
-      new RecipeService(using tx)
+  private val app = (tx: Transactor[IO]) => Server.mainHttpRoutes(tx).orNotFound -> new RecipeService(using tx)
   private def recipeRoutesTest = testWithDb(app)(name => expects => test(name)(expects))
 
   recipeRoutesTest("Searching for recipes should only return recipes matching the query") {

@@ -8,8 +8,8 @@ import endpoints.*
 import co.uk.foodgen.helpers.{MealsHelper, RecipesHelper, UsersHelper}
 import co.uk.foodgen.models.Meal
 import co.uk.foodgen.payload.{CreateMealRequest, MealsResponse}
-import co.uk.foodgen.service.{MealService, RecipeService}
 import co.uk.foodgen.service.models.Period
+import co.uk.foodgen.service.{MealService, RecipeService}
 import doobie.util.transactor.Transactor
 import org.http4s.Method.*
 import org.http4s.Status.*
@@ -21,8 +21,7 @@ import java.time.LocalDate
 object CalendarSpec extends IOSuite:
   private val app = (tx: Transactor[IO]) =>
     (
-      (new LoginEndpoints(tx).allRoutes <+>
-        new CalendarEndpoints(tx).allRoutes.withAuthentication).orNotFound,
+      Server.mainHttpRoutes(tx).orNotFound,
       new RecipeService(using tx),
       new MealService(using tx)
     )

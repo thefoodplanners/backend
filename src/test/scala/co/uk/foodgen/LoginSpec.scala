@@ -2,20 +2,17 @@ package co.uk.foodgen
 
 import cats.data.Kleisli
 import cats.effect.IO
-import cats.implicits.toSemigroupKOps
 import co.uk.foodgen.endpoints.*
 import co.uk.foodgen.helpers.UsersHelper
 import co.uk.foodgen.payload.{CreateUserRequest, LoginRequest}
 import doobie.util.transactor.Transactor
 import org.http4s.Method.*
-import org.http4s.Status.{BadRequest, Created, Ok, Unauthorized}
+import org.http4s.Status.*
 import org.http4s.{Method, Request, Response, Uri}
 import org.typelevel.ci.CIString
 
 object LoginSpec extends IOSuite:
-  private val app = (tx: Transactor[IO]) =>
-    (new LoginEndpoints(tx).allRoutes <+>
-      new UserEndpoints(tx).allRoutes.withAuthentication).orNotFound
+  private val app = (tx: Transactor[IO]) => Server.mainHttpRoutes(tx).orNotFound
   private def loginEndpointsTest = testWithDb(app)(name => expects => test(name)(expects))
 
   loginEndpointsTest("Successfully register the user") { implicit router =>

@@ -1,19 +1,20 @@
 package co.uk.foodgen.endpoints
 
+import cats.data.Ior
 import cats.effect.IO
-import co.uk.foodgen.models.User
 import co.uk.foodgen.payload.{DietaryRequirementsPayload, TargetCaloriesResponse}
 import co.uk.foodgen.service.UserService
 import doobie.util.transactor.Transactor
-import org.http4s.ContextRoutes
+import org.http4s.{ContextRoutes, HttpRoutes}
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.jsonBody
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.*
 import tsec.authentication.AuthenticatedCookie
 import tsec.mac.jca.HMACSHA256
 
-class UserEndpoints(transactor: Transactor[IO]):
+class UserEndpoints(transactor: Transactor[IO]) extends HttpEndpoint:
 
   private lazy val userService = new UserService(using transactor)
 
@@ -49,9 +50,10 @@ class UserEndpoints(transactor: Transactor[IO]):
       userService.updateDietaryRequirements(request.dietaryRequirements, userId)
     }
 
-  val allEndpoints = List(getTargetCalories, getDietaryRequirements, updateDietaryRequirements)
+  val endpoints = List(getTargetCalories, getDietaryRequirements, updateDietaryRequirements)
 
-  val allRoutes: ContextRoutes[User.Id, IO] =
-    Http4sServerInterpreter[IO]().toContextRoutes(allEndpoints)
+  val routes: Ior[HttpRoutes[IO], ContextRoutes[AuthInfo, IO]] =
+    val authRoutes = Http4sServerInterpreter[IO]().toContextRoutes(endpoints)
+    Ior.right(authRoutes)
 
 end UserEndpoints

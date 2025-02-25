@@ -1,17 +1,18 @@
 package co.uk.foodgen.endpoints
 
+import cats.data.Ior
 import cats.effect.IO
 import co.uk.foodgen.models.{DietaryRequirement, MacrosFilter, User}
 import co.uk.foodgen.payload.RecipesResponse
 import co.uk.foodgen.service.RecipeService
 import doobie.util.transactor.Transactor
-import org.http4s.ContextRoutes
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.jsonBody
+import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.*
 
-class RecipeEndpoints(transactor: Transactor[IO]):
+class RecipeEndpoints(transactor: Transactor[IO]) extends HttpEndpoint:
 
   private lazy val recipeService = new RecipeService(using transactor)
 
@@ -59,9 +60,10 @@ class RecipeEndpoints(transactor: Transactor[IO]):
         .map(RecipesResponse(_))
     }
 
-  val allEndpoints = List(recipesSearch, recipeRecommendations)
+  val endpoints = List(recipesSearch, recipeRecommendations)
 
-  val allRoutes: ContextRoutes[User.Id, IO] =
-    Http4sServerInterpreter[IO]().toContextRoutes(allEndpoints)
+  val routes =
+    val authRoutes = Http4sServerInterpreter[IO]().toContextRoutes(endpoints)
+    Ior.right(authRoutes)
 
 end RecipeEndpoints

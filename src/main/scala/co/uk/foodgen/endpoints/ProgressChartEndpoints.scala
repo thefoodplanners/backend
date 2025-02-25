@@ -1,13 +1,14 @@
 package co.uk.foodgen.endpoints
 
+import cats.data.Ior
 import cats.effect.IO
+import co.uk.foodgen.models
 import co.uk.foodgen.models.User
 import co.uk.foodgen.payload.FullMetricsResponse
 import co.uk.foodgen.service.ProgressChartService
 import co.uk.foodgen.service.models.Period
 import doobie.util.transactor.Transactor
 import io.scalaland.chimney.dsl.transformInto
-import org.http4s.ContextRoutes
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.jsonBody
@@ -15,7 +16,7 @@ import sttp.tapir.server.http4s.*
 
 import java.time.LocalDate
 
-class ProgressChartEndpoints(transactor: Transactor[IO]):
+class ProgressChartEndpoints(transactor: Transactor[IO]) extends HttpEndpoint:
 
   private lazy val progressChartService = new ProgressChartService(using transactor)
 
@@ -35,9 +36,10 @@ class ProgressChartEndpoints(transactor: Transactor[IO]):
         .map(_.transformInto[FullMetricsResponse])
     }
 
-  val allEndpoints = List(getFullMetrics)
+  val endpoints = List(getFullMetrics)
 
-  val allRoutes: ContextRoutes[User.Id, IO] =
-    Http4sServerInterpreter[IO]().toContextRoutes(allEndpoints)
+  val routes =
+    val authRoutes = Http4sServerInterpreter[IO]().toContextRoutes(endpoints)
+    Ior.right(authRoutes)
 
 end ProgressChartEndpoints
