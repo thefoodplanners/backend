@@ -1,7 +1,7 @@
 package co.uk.foodgen.endpoints
 
 import cats.effect.IO
-import co.uk.foodgen.payload.{CreateUserRequest, LoginRequest}
+import co.uk.foodgen.payload.{LoginRequest, RegisterRequest}
 import co.uk.foodgen.service.LoginService
 import co.uk.foodgen.service.errorModels.ServiceError
 import doobie.util.transactor.Transactor
@@ -18,7 +18,7 @@ class LoginEndpoints(transactor: Transactor[IO]):
 
   private val register = endpoint.post
     .in(registerUrl)
-    .in(jsonBody[CreateUserRequest])
+    .in(jsonBody[RegisterRequest])
     .errorOut(
       oneOf(
         ServiceError.toStatusCode[ServiceError.BadRequest]
