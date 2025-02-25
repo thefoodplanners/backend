@@ -2,8 +2,8 @@ package co.uk.foodgen
 
 import cats.data.Kleisli
 import cats.effect.IO
-import cats.implicits.toSemigroupKOps
-import co.uk.foodgen.endpoints.withAuthentication
+import co.uk.foodgen.endpoints.*
+import co.uk.foodgen.helpers.LoginHelper
 import co.uk.foodgen.helpers.RecipesHelper.addRecipe
 import co.uk.foodgen.models.DietaryRequirement.*
 import co.uk.foodgen.payload.RecipesResponse
@@ -21,7 +21,7 @@ object RecipeSpec extends IOSuite:
   recipeRoutesTest("Searching for recipes should only return recipes matching the query") {
     case (router @ given HttpApp[IO], service @ given RecipeService) =>
       for
-        _ <- addRecipe("recipe12")
+        _ <- addRecipe("recipe1")
         _ <- addRecipe("recipe2")
 
         loginToken <- UsersHelper.loginUser()
@@ -35,6 +35,37 @@ object RecipeSpec extends IOSuite:
         expected = List("recipe12")
         check = expect.eql(actual.recipes.map(_.name), expected)
       yield check
+        loginToken <- LoginHelper.loginUser()
+        request = Request[IO](
+          GET,
+          Uri.unsafeFromString(s"${recipeSearchUrl.asString}?query=recipe1&limit=5&offset=0")
+        )
+          .addCookie(loginToken)
+        response <- router(request)
+        actual <- response.as[RecipesResponse]
+        expected = List("recipe1")
+        check = expect.eql(actual.recipes.map(_.name), expected)
+      yield check
+  }
+
+  recipeRoutesTest(
+    "Searching for recipes should only return recipes matching the query even with dietary requirements"
+  ) { case (router @ given HttpApp[IO], service @ given RecipeService) =>
+    for
+      _ <- addRecipe("recipe1", diets = List(Vegetarian))
+      _ <- addRecipe("recipe2", diets = List(Vegan))
+
+      loginToken <- LoginHelper.loginUser()
+      request = Request[IO](
+        GET,
+        Uri.unsafeFromString(s"${recipeSearchUrl.asString}?query=recipe1&limit=5&offset=0")
+      )
+        .addCookie(loginToken)
+      response <- router(request)
+      actual <- response.as[RecipesResponse]
+      expected = List("recipe1")
+      check = expect.eql(actual.recipes.map(_.name), expected)
+    yield check
   }
 
   recipeRoutesTest(
@@ -43,11 +74,11 @@ object RecipeSpec extends IOSuite:
     for
       _ <- addRecipe(
         "recipe1",
-        diets = List(DietaryRequirement.Halal, DietaryRequirement.Vegetarian)
+        diets = List(Halal, Vegetarian)
       )
-      _ <- addRecipe("recipe2", diets = List(DietaryRequirement.Halal))
+      _ <- addRecipe("recipe2", diets = List(Halal))
 
-      loginToken <- UsersHelper.loginUser()
+      loginToken <- LoginHelper.loginUser()
       request = Request[IO](
         GET,
         Uri.unsafeFromString(
@@ -70,7 +101,7 @@ object RecipeSpec extends IOSuite:
       _ <- addRecipe("recipe2", calories = 10)
       _ <- addRecipe("recipe3", calories = 9)
 
-      loginToken <- UsersHelper.loginUser()
+      loginToken <- LoginHelper.loginUser()
       request = Request[IO](
         GET,
         Uri.unsafeFromString(s"${recipeSearchUrl.asString}?max-calories=10&limit=10&offset=0")
@@ -91,7 +122,7 @@ object RecipeSpec extends IOSuite:
       _ <- addRecipe("recipe2", carbohydrates = 10.0f)
       _ <- addRecipe("recipe3", carbohydrates = 9.9f)
 
-      loginToken <- UsersHelper.loginUser()
+      loginToken <- LoginHelper.loginUser()
       request = Request[IO](
         GET,
         Uri.unsafeFromString(s"${recipeSearchUrl.asString}?max-carbohydrates=10&limit=10&offset=0")
@@ -112,7 +143,7 @@ object RecipeSpec extends IOSuite:
       _ <- addRecipe("recipe2", proteins = 10.0f)
       _ <- addRecipe("recipe3", proteins = 9.9f)
 
-      loginToken <- UsersHelper.loginUser()
+      loginToken <- LoginHelper.loginUser()
       request = Request[IO](
         GET,
         Uri.unsafeFromString(s"${recipeSearchUrl.asString}?max-proteins=10&limit=10&offset=0")
@@ -133,7 +164,7 @@ object RecipeSpec extends IOSuite:
       _ <- addRecipe("recipe2", fats = 10.0f)
       _ <- addRecipe("recipe3", fats = 9.9f)
 
-      loginToken <- UsersHelper.loginUser()
+      loginToken <- LoginHelper.loginUser()
       request = Request[IO](
         GET,
         Uri.unsafeFromString(s"${recipeSearchUrl.asString}?max-fats=10&limit=10&offset=0")
@@ -155,7 +186,7 @@ object RecipeSpec extends IOSuite:
       _ <- addRecipe("recipe3")
       _ <- addRecipe("recipe4")
 
-      loginToken <- UsersHelper.loginUser()
+      loginToken <- LoginHelper.loginUser()
       request =
         Request[IO](GET, Uri.unsafeFromString(s"${recipeSearchUrl.asString}?limit=3&offset=0"))
           .addCookie(loginToken)
@@ -178,7 +209,7 @@ object RecipeSpec extends IOSuite:
       _ <- addRecipe("recipe5")
       _ <- addRecipe("recipe6")
 
-      loginToken <- UsersHelper.loginUser()
+      loginToken <- LoginHelper.loginUser()
       request =
         Request[IO](GET, Uri.unsafeFromString(s"${recipeSearchUrl.asString}?limit=3&offset=3"))
           .addCookie(loginToken)
@@ -195,14 +226,12 @@ object RecipeSpec extends IOSuite:
     for
       _ <- addRecipe(
         "recipe1",
-        diets = List(DietaryRequirement.Vegan, DietaryRequirement.Vegetarian)
+        diets = List(Vegan, Vegetarian)
       )
-      _ <- addRecipe("recipe2", diets = List(DietaryRequirement.Vegan))
+      _ <- addRecipe("recipe2", diets = List(Vegan))
       _ <- addRecipe("recipe3")
 
-      loginToken <- UsersHelper.loginUser(dietaryRequirements =
-        List(DietaryRequirement.Vegan, DietaryRequirement.Vegetarian)
-      )
+      loginToken <- LoginHelper.loginUser(dietaryRequirements = List(Vegan, Vegetarian))
       request = Request[IO](
         GET,
         Uri.unsafeFromString(recipeRecommendationsUrl.asString)

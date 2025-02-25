@@ -3,8 +3,8 @@ package co.uk.foodgen
 import cats.data.Kleisli
 import cats.effect.IO
 import co.uk.foodgen.endpoints.*
-import co.uk.foodgen.helpers.UsersHelper
-import co.uk.foodgen.payload.{CreateUserRequest, LoginRequest}
+import co.uk.foodgen.helpers.LoginHelper
+import co.uk.foodgen.payload.{LoginRequest, RegisterRequest}
 import doobie.util.transactor.Transactor
 import org.http4s.Method.*
 import org.http4s.Status.*
@@ -32,19 +32,13 @@ object LoginSpec extends IOSuite:
     yield check
   }
 
-  loginEndpointsTest("Fail registering user if user is already registered") { implicit router =>
-    val resource = CreateUserRequest(
-      email = "test@example.com",
-      username = "username1",
-      password = "password1",
-      targetCalories = None,
-      dietaryRequirements = List.empty
-    )
-    val request = Request[IO](POST, Uri.unsafeFromString(registerUrl))
+  loginEndpointsTest("Fail login if the user provides the wrong username") { implicit router =>
+    val resource = LoginRequest(username = "wrongusername", password = "password1")
+    val request = Request[IO](POST, Uri.unsafeFromString(loginUrl))
       .withEntity(resource)
 
     for
-      _ <- UsersHelper.createUser(
+      _ <- LoginHelper.createUser(
         email = "test@example.com",
         username = "username1",
         password = "password1",
@@ -52,19 +46,34 @@ object LoginSpec extends IOSuite:
         dietaryRequirements = List.empty
       )
       response <- router(request)
-      errorMessage <- response.as[String]
-      check = expect.eql(BadRequest, response.status) and
-        expect.eql("Username already exists", errorMessage)
+      check = expect.eql(Unauthorized, response.status)
+    yield check
+  }
+
+  loginEndpointsTest("Fail login if the user provides the wrong password") { implicit router =>
+    val resource = LoginRequest(username = "username1", password = "wrongpassword")
+    val request = Request[IO](POST, Uri.unsafeFromString(loginUrl))
+      .withEntity(resource)
+
+    for
+      _ <- LoginHelper.createUser(
+        email = "test@example.com",
+        username = "username1",
+        password = "password1",
+        targetCalories = None,
+        dietaryRequirements = List.empty
+      )
+      response <- router(request)
+      check = expect.eql(Unauthorized, response.status)
     yield check
   }
 
   loginEndpointsTest("Successfully login the user") { implicit router =>
     val resource = LoginRequest(username = "username1", password = "password1")
-    val request = Request[IO](POST, Uri.unsafeFromString(loginUrl))
-      .withEntity(resource)
+    val request = Request[IO](POST, Uri.unsafeFromString(loginUrl)).withEntity(resource)
 
     for
-      _ <- UsersHelper.createUser(
+      _ <- LoginHelper.createUser(
         email = "test@example.com",
         username = "username1",
         password = "password1",
@@ -78,17 +87,14 @@ object LoginSpec extends IOSuite:
     yield check
   }
 
-  loginEndpointsTest("Users should not be able to access authorised endpoints if not logged in") { implicit router =>
+  loginEndpointsTest("Successfully logout the user and invalidate the session cookie") { implicit router =>
     for
-      _ <- UsersHelper.createUser(
-        email = "test@example.com",
-        username = "username",
-        password = "password",
-        targetCalories = Some(100)
-      )
-      request = Request[IO](GET, Uri.unsafeFromString(targetCaloriesUrl.asString))
+      loginToken <- LoginHelper.loginUser()
+      resource = LoginRequest(username = "username1", password = "password1")
+      request = Request[IO](POST, Uri.unsafeFromString(logoutUrl)).addCookie(loginToken).withEntity(resource)
       response <- router(request)
-      check = expect.eql(response.status, Unauthorized)
+      invalidRequest <- router(request)
+      check = expect.eql(NoContent, response.status) and expect.eql(Unauthorized, invalidRequest.status)
     yield check
   }
 

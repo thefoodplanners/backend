@@ -2,10 +2,8 @@ package co.uk.foodgen
 
 import cats.data.Kleisli
 import cats.effect.IO
-import cats.implicits.toSemigroupKOps
-import co.uk.foodgen.endpoints.withAuthentication
-import endpoints.*
-import co.uk.foodgen.helpers.{MealsHelper, RecipesHelper, UsersHelper}
+import co.uk.foodgen.endpoints.*
+import co.uk.foodgen.helpers.{LoginHelper, MealsHelper, RecipesHelper}
 import co.uk.foodgen.models.Meal
 import co.uk.foodgen.payload.{CreateMealRequest, MealsResponse}
 import co.uk.foodgen.service.models.Period
@@ -33,7 +31,7 @@ object CalendarSpec extends IOSuite:
     case (router @ given HttpApp[IO], _ @ given RecipeService, _) =>
       for
         recipeId <- RecipesHelper.addRecipe("recipe1")
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         resource = CreateMealRequest(date, mealNumber = None, recipeId)
         request = Request[IO](POST, Uri.unsafeFromString(calendarMealsUrl.asString))
           .withEntity(resource)
@@ -47,7 +45,7 @@ object CalendarSpec extends IOSuite:
     case (router @ given HttpApp[IO], _ @ given RecipeService, mealService) =>
       for
         recipeId <- RecipesHelper.addRecipe("recipe1")
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         userId <- decryptUserIdFromCookieOrFail(loginToken)
         mealId1 <- mealService.saveMeal(date, mealNumber = None, recipeId, userId)
 
@@ -69,7 +67,7 @@ object CalendarSpec extends IOSuite:
     case (router @ given HttpApp[IO], _ @ given RecipeService, mealService) =>
       for
         recipeId <- RecipesHelper.addRecipe("recipe1")
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         userId <- decryptUserIdFromCookieOrFail(loginToken)
         mealId1 <- mealService.saveMeal(date, mealNumber = None, recipeId, userId)
         mealId2 <- mealService.saveMeal(date, mealNumber = None, recipeId, userId)
@@ -81,11 +79,11 @@ object CalendarSpec extends IOSuite:
           .addCookie(loginToken)
         response <- router(request)
         result <- MealsHelper.getMeals(date, Period.Day)
-        expected = Set(mealId1 -> 1, Meal.Id(4) -> 2, mealId2 -> 3, mealId3 -> 4)
+        expected = List(mealId1 -> 1, Meal.Id(4) -> 2, mealId2 -> 3, mealId3 -> 4)
         check = expect.eql(Created, response.status) and
           expect.same(
             expected,
-            result.meals.map(mr => mr.mealId -> mr.mealNumber).toSet
+            result.meals.map(mr => mr.mealId -> mr.mealNumber)
           )
       yield check
   }
@@ -94,7 +92,7 @@ object CalendarSpec extends IOSuite:
     case (router @ given HttpApp[IO], _ @ given RecipeService, mealService) =>
       for
         recipeId <- RecipesHelper.addRecipe("recipe1")
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         userId <- decryptUserIdFromCookieOrFail(loginToken)
         mealId1 <- mealService.saveMeal(
           date = date,
@@ -170,7 +168,7 @@ object CalendarSpec extends IOSuite:
       for
         recipeId1 <- RecipesHelper.addRecipe("recipe1")
         recipeId2 <- RecipesHelper.addRecipe("recipe2")
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         userId <- decryptUserIdFromCookieOrFail(loginToken)
         mealId <- mealService.saveMeal(
           date = date,
@@ -194,7 +192,7 @@ object CalendarSpec extends IOSuite:
     case (router @ given HttpApp[IO], _ @ given RecipeService, mealService) =>
       for
         recipeId <- RecipesHelper.addRecipe("recipe1")
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         userId <- decryptUserIdFromCookieOrFail(loginToken)
         mealId1 <- mealService.saveMeal(
           date = date,
@@ -259,7 +257,7 @@ object CalendarSpec extends IOSuite:
     case (router @ given HttpApp[IO], _ @ given RecipeService, mealService) =>
       for
         recipeId <- RecipesHelper.addRecipe("recipe1")
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         userId <- decryptUserIdFromCookieOrFail(loginToken)
         mealId1 <- mealService.saveMeal(
           date = date,

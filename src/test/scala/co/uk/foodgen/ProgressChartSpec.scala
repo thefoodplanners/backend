@@ -2,10 +2,8 @@ package co.uk.foodgen
 
 import cats.data.Kleisli
 import cats.effect.IO
-import cats.implicits.toSemigroupKOps
-import co.uk.foodgen.endpoints.withAuthentication
-import endpoints.*
-import co.uk.foodgen.helpers.{MealsHelper, RecipesHelper, UsersHelper}
+import co.uk.foodgen.endpoints.*
+import co.uk.foodgen.helpers.{LoginHelper, MealsHelper, RecipesHelper}
 import co.uk.foodgen.payload.{FullMetricsResponse, MetricsResponse}
 import co.uk.foodgen.service.{MealService, RecipeService}
 import doobie.util.transactor.Transactor
@@ -53,7 +51,7 @@ object ProgressChartSpec extends IOSuite:
           proteins = 30f,
           fats = 30f
         )
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         _ <- MealsHelper.addMeal(date, None, recipeId1)
         _ <- MealsHelper.addMeal(date, None, recipeId2)
         _ <- MealsHelper.addMeal(date, None, recipeId3)
@@ -99,7 +97,7 @@ object ProgressChartSpec extends IOSuite:
           proteins = 30f,
           fats = 30f
         )
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         _ <- MealsHelper.addMeal(date, None, recipeId1)
         _ <- MealsHelper.addMeal(date.plusDays(1), None, recipeId1)
         _ <- MealsHelper.addMeal(date.plusDays(1), None, recipeId2)
@@ -148,7 +146,7 @@ object ProgressChartSpec extends IOSuite:
           proteins = 30f,
           fats = 30f
         )
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         _ <- MealsHelper.addMeal(date, None, recipeId1)
         _ <- MealsHelper.addMeal(date.plusWeeks(1), None, recipeId1)
         _ <- MealsHelper.addMeal(date.plusWeeks(1), None, recipeId2)
@@ -197,7 +195,7 @@ object ProgressChartSpec extends IOSuite:
           proteins = 30f,
           fats = 30f
         )
-        loginToken @ given RequestCookie <- UsersHelper.loginUser()
+        loginToken @ given RequestCookie <- LoginHelper.loginUser()
         _ <- MealsHelper.addMeal(date, None, recipeId1)
         _ <- MealsHelper.addMeal(date.plusMonths(1), None, recipeId1)
         _ <- MealsHelper.addMeal(date.plusMonths(1), None, recipeId2)

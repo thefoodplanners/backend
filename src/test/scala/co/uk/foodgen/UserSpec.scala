@@ -3,7 +3,7 @@ package co.uk.foodgen
 import cats.data.Kleisli
 import cats.effect.IO
 import co.uk.foodgen.endpoints.*
-import co.uk.foodgen.helpers.UsersHelper
+import co.uk.foodgen.helpers.LoginHelper
 import co.uk.foodgen.models.DietaryRequirement
 import co.uk.foodgen.payload.{DietaryRequirementsPayload, TargetCaloriesResponse}
 import doobie.util.transactor.Transactor
@@ -18,11 +18,24 @@ object UserSpec extends IOSuite:
 
   userRoutesTest("Users should not be able to access authorised endpoints if not logged in") { implicit router =>
     for
-      loginToken <- UsersHelper.loginUser(targetCalories = Some(100))
+      _ <- LoginHelper.createUser(
+        email = "test@example.com",
+        username = "username",
+        password = "password",
+        targetCalories = Some(100)
+      )
+      request = Request[IO](GET, Uri.unsafeFromString(targetCaloriesUrl.asString))
+      response <- router(request)
+      check = expect.eql(response.status, Unauthorized)
+    yield check
+  }
+
+  userRoutesTest("GET / users / target-calories should return the correct target calories") { implicit router =>
+    for
+      loginToken <- LoginHelper.loginUser(targetCalories = Some(100))
       request = Request[IO](GET, Uri.unsafeFromString(targetCaloriesUrl.asString))
         .addCookie(loginToken)
       response <- router(request)
-      _ <- IO.println(response.status)
       targetCalories <- response.as[TargetCaloriesResponse]
       expected = TargetCaloriesResponse(Some(100))
       check = expect.eql(Ok, response.status) and expect.same(targetCalories, expected)
@@ -33,7 +46,7 @@ object UserSpec extends IOSuite:
     "GET / users / dietary-requirements should return the correct dietary requirements"
   ) { implicit router =>
     for
-      loginToken <- UsersHelper.loginUser(dietaryRequirements = List(DietaryRequirement.Vegan))
+      loginToken <- LoginHelper.loginUser(dietaryRequirements = List(DietaryRequirement.Vegan))
       request = Request[IO](GET, Uri.unsafeFromString(dietaryRequirementsUrl.asString))
         .addCookie(loginToken)
       response <- router(request)
@@ -47,7 +60,7 @@ object UserSpec extends IOSuite:
     "PUT / users / dietary-requirements should update to the correct dietary requirements"
   ) { implicit router =>
     for
-      loginToken <- UsersHelper.loginUser(dietaryRequirements =
+      loginToken <- LoginHelper.loginUser(dietaryRequirements =
         List(DietaryRequirement.Vegan, DietaryRequirement.Vegetarian)
       )
       expected =
