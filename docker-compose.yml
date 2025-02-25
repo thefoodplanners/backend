@@ -1,5 +1,3 @@
-version: '2'
-
 services:
   chai:
     build:
@@ -12,6 +10,9 @@ services:
       DB_PASSWORD: mysecretpassword
     ports:
       - '9000:9000'
+    depends_on:
+      foodgen-db:
+        condition: service_healthy
 
   foodgen-db:
     image: postgres:latest
@@ -22,5 +23,14 @@ services:
       POSTGRES_PASSWORD: mysecretpassword
     volumes:
       - ./src/test/resources/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
     ports:
       - '5432:5432'
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:

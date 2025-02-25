@@ -1,5 +1,5 @@
 # Use an official OpenJDK runtime as a parent image
-FROM openjdk:11-jdk-slim as build
+FROM openjdk:11-jdk-slim AS builder
 
 ARG SBT_VERSION=1.10.1
 
@@ -35,7 +35,7 @@ FROM openjdk:11-jre-slim
 WORKDIR /app
 
 # Copy the built artifact from the build stage
-COPY --from=build /app/target/scala-3.3.3/chai-assembly-1.0.0.jar /app/http-app.jar
+COPY --from=builder /app/target/scala-3*/chai-assembly-*.jar /app/http-app.jar
 
 # Expose the port your app runs on
 EXPOSE 9000
