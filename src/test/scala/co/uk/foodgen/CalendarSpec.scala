@@ -5,16 +5,19 @@ import cats.effect.IO
 import co.uk.foodgen.endpoints.*
 import co.uk.foodgen.helpers.{LoginHelper, MealsHelper, RecipesHelper}
 import co.uk.foodgen.models.Meal
-import co.uk.foodgen.payload.{CreateMealRequest, MealsResponse}
+import co.uk.foodgen.payload.CreateMealRequest
 import co.uk.foodgen.service.models.Period
 import co.uk.foodgen.service.{MealService, RecipeService}
 import doobie.util.transactor.Transactor
+import io.circe.Json
 import org.http4s.Method.*
 import org.http4s.Status.*
 import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.{HttpApp, Method, Request, RequestCookie, Response, Uri}
 
 import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 object CalendarSpec extends IOSuite:
   private val app = (tx: Transactor[IO]) =>
@@ -55,10 +58,11 @@ object CalendarSpec extends IOSuite:
           .addCookie(loginToken)
         response <- router(request)
         result <- MealsHelper.getMeals(date, Period.Day)
+        dateStr = date.getDayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault)
         check = expect.eql(Created, response.status) and
-          expect.same(
+          expect.eql(
             List((mealId1, 1), (Meal.Id(2), 2)),
-            result.meals.map(mr => mr.mealId -> mr.mealNumber)
+            result.meals.map(mdr => mdr.monday.get.mealId -> mdr.monday.get.mealNumber)
           )
       yield check
   }
@@ -83,7 +87,7 @@ object CalendarSpec extends IOSuite:
         check = expect.eql(Created, response.status) and
           expect.same(
             expected,
-            result.meals.map(mr => mr.mealId -> mr.mealNumber)
+            result.meals.map(mdr => mdr.monday.get.mealId -> mdr.monday.get.mealNumber)
           )
       yield check
   }
@@ -146,20 +150,9 @@ object CalendarSpec extends IOSuite:
           Request[IO](GET, Uri.unsafeFromString(s"${calendarMealsUrl.asString}/week?date=$date"))
             .addCookie(loginToken)
         response <- router(request)
-        result <- response.as[MealsResponse].map(_.meals)
-        expectedDays = List(
-          mealId1 -> "Mon",
-          mealId2 -> "Mon",
-          mealId3 -> "Tue",
-          mealId4 -> "Wed",
-          mealId5 -> "Thu",
-          mealId6 -> "Fri",
-          mealId7 -> "Sat",
-          mealId8 -> "Sun"
-        )
-        check = expect.eql(Ok, response.status) and
-          expect.eql(8, result.length) and
-          expect.eql(expectedDays, result.map(mr => mr.mealId -> mr.day))
+        result <- response.as[Json]
+        expected <- ResourceFileReader.readJsonFile("calendar/mealsResponseForWeek.json")
+        check = expect.eql(expected, result.removeJsonFields(Set("date", "day", "recipe")))
       yield check
   }
 

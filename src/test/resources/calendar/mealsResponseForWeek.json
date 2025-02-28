@@ -1,0 +1,44 @@
+[
+  {
+    "monday": {
+      "mealId": 1,
+      "mealNumber": 1
+    },
+    "tuesday": {
+      "mealId": 3,
+      "mealNumber": 1
+    },
+    "wednesday": {
+      "mealId": 4,
+      "mealNumber": 1
+    },
+    "thursday": {
+      "mealId": 5,
+      "mealNumber": 1
+    },
+    "friday": {
+      "mealId": 6,
+      "mealNumber": 1
+    },
+    "saturday": {
+      "mealId": 7,
+      "mealNumber": 1
+    },
+    "sunday": {
+      "mealId": 8,
+      "mealNumber": 1
+    }
+  },
+  {
+    "monday": {
+      "mealId": 2,
+      "mealNumber": 2
+    },
+    "tuesday": {},
+    "wednesday": {},
+    "thursday": {},
+    "friday": {},
+    "saturday": {},
+    "sunday": {}
+  }
+]

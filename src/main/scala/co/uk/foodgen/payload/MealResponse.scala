@@ -25,7 +25,7 @@ object MealResponse:
       mealId = view.id,
       mealNumber = view.mealNumber,
       date = view.date,
-      day = view.date.format(DateTimeFormatter.ofPattern("EEE")),
+      day = view.date.format(DateTimeFormatter.ofPattern("EEEE")),
       recipe = view.recipe
     )
 

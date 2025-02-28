@@ -8,18 +8,15 @@ import com.dimafeng.testcontainers.{Container, PostgreSQLContainer}
 import doobie.syntax.connectionio.toConnectionIOOps
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
+import io.circe.Json
 import org.http4s.Method.GET
 import org.http4s.{Request, RequestCookie, Uri}
 import org.testcontainers.utility.DockerImageName
-import weaver.{Expectations, SimpleIOSuite, TestName}
+import weaver.{Expectations, TestName}
 
 import scala.io.Source
 
 package object foodgen:
-  trait IOSuite extends SimpleIOSuite:
-    override def maxParallelism: Int = 3
-  end IOSuite
-
   private val containerDef = PostgreSQLContainer.Def(
     dockerImageName = DockerImageName.parse("postgres:latest")
   )
@@ -62,5 +59,16 @@ package object foodgen:
       .map(_.identity)
       .value
       .map(_.get)
+
+  extension (json: Json)
+    def removeJsonFields(fieldsToRemove: Set[String]): Json =
+      json.fold(
+        json,
+        _ => json,
+        _ => json,
+        _ => json,
+        arr => Json.fromValues(arr.map(_.removeJsonFields(fieldsToRemove))),
+        obj => obj.filterKeys(!fieldsToRemove.contains(_)).mapValues(_.removeJsonFields(fieldsToRemove)).toJson
+      )
 
 end foodgen
