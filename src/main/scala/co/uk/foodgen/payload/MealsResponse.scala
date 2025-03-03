@@ -10,7 +10,7 @@ final case class MealsResponse(meals: List[MealDaysResponse])
 
 object MealsResponse:
   given Transformer[List[MealView], MealsResponse] = (views: List[MealView]) =>
-    val maxMealNumber = views.map(_.mealNumber).max
+    val maxMealNumber = Math.max(views.map(_.mealNumber).maxOption.getOrElse(1), 3)
     val meals = List.range(1, maxMealNumber + 1).map(mealNumber => MealDaysResponse(views, mealNumber))
     MealsResponse(meals)
 

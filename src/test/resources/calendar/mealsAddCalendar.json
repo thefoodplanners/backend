@@ -1,0 +1,50 @@
+[
+  {
+    "monday": {
+      "mealId": 1,
+      "mealNumber": 1
+    },
+    "tuesday": {},
+    "wednesday": {},
+    "thursday": {},
+    "friday": {},
+    "saturday": {},
+    "sunday": {}
+  },
+  {
+    "monday": {
+      "mealId": 4,
+      "mealNumber": 2
+    },
+    "tuesday": {},
+    "wednesday": {},
+    "thursday": {},
+    "friday": {},
+    "saturday": {},
+    "sunday": {}
+  },
+  {
+    "monday": {
+      "mealId": 2,
+      "mealNumber": 3
+    },
+    "tuesday": {},
+    "wednesday": {},
+    "thursday": {},
+    "friday": {},
+    "saturday": {},
+    "sunday": {}
+  },
+  {
+    "monday": {
+      "mealId": 3,
+      "mealNumber": 4
+    },
+    "tuesday": {},
+    "wednesday": {},
+    "thursday": {},
+    "friday": {},
+    "saturday": {},
+    "sunday": {}
+  }
+]

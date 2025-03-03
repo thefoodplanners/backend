@@ -1,6 +1,7 @@
 package co.uk.foodgen.payload
 
 import cats.syntax.eq.catsSyntaxEq
+import co.uk.foodgen.payload
 import co.uk.foodgen.service.models.MealView
 import io.circe.generic.semiauto.deriveCodec
 import io.circe.syntax.EncoderOps
@@ -47,4 +48,6 @@ object MealDaysResponse:
     }
   )
   given Codec[MealDaysResponse] = deriveCodec
+
+  given Schema[Option[MealResponse]] = Schema.schemaForOption[MealResponse].copy(isOptional = false)
   given Schema[MealDaysResponse] = Schema.derived

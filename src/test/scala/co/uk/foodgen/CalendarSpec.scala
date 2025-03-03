@@ -2,6 +2,7 @@ package co.uk.foodgen
 
 import cats.data.Kleisli
 import cats.effect.IO
+import io.circe.syntax.EncoderOps
 import co.uk.foodgen.endpoints.*
 import co.uk.foodgen.helpers.{LoginHelper, MealsHelper, RecipesHelper}
 import co.uk.foodgen.models.Meal
@@ -16,8 +17,6 @@ import org.http4s.circe.CirceEntityCodec.*
 import org.http4s.{HttpApp, Method, Request, RequestCookie, Response, Uri}
 
 import java.time.LocalDate
-import java.time.format.TextStyle
-import java.util.Locale
 
 object CalendarSpec extends IOSuite:
   private val app = (tx: Transactor[IO]) =>
@@ -58,12 +57,10 @@ object CalendarSpec extends IOSuite:
           .addCookie(loginToken)
         response <- router(request)
         result <- MealsHelper.getMeals(date, Period.Day)
-        dateStr = date.getDayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault)
+        actual = result.asJson
+        expected <- ResourceFileReader.readJsonFile("calendar/mealsAppendCalendar.json")
         check = expect.eql(Created, response.status) and
-          expect.eql(
-            List((mealId1, 1), (Meal.Id(2), 2)),
-            result.meals.map(mdr => mdr.monday.get.mealId -> mdr.monday.get.mealNumber)
-          )
+          expect.eql(expected, actual.removeJsonFields(Set("date", "day", "recipe")))
       yield check
   }
 
@@ -83,12 +80,10 @@ object CalendarSpec extends IOSuite:
           .addCookie(loginToken)
         response <- router(request)
         result <- MealsHelper.getMeals(date, Period.Day)
-        expected = List(mealId1 -> 1, Meal.Id(4) -> 2, mealId2 -> 3, mealId3 -> 4)
+        actual = result.asJson
+        expected <- ResourceFileReader.readJsonFile("calendar/mealsAddCalendar.json")
         check = expect.eql(Created, response.status) and
-          expect.same(
-            expected,
-            result.meals.map(mdr => mdr.monday.get.mealId -> mdr.monday.get.mealNumber)
-          )
+          expect.eql(expected, actual.removeJsonFields(Set("date", "day", "recipe")))
       yield check
   }
 
