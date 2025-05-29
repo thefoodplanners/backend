@@ -2,7 +2,6 @@ package co.uk.foodgen.models
 
 import doobie.postgres.implicits.pgEnumString
 import doobie.util.meta.Meta
-import io.circe.generic.semiauto.deriveCodec
 import io.circe.{Codec, Decoder, Encoder}
 import sttp.tapir.Schema
 
@@ -17,5 +16,8 @@ object MealType:
     str => MealType.valueOf(str.capitalize),
     _.toString
   )
-  given Codec[MealType] = deriveCodec
+  given Codec[MealType] = Codec.from(
+    Decoder.decodeString.map(str => MealType.valueOf(str.capitalize)),
+    Encoder.encodeString.contramap(_.toString)
+  )
   given Schema[MealType] = Schema.derivedEnumeration.defaultStringBased

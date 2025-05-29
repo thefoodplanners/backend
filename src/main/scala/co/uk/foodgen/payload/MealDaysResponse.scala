@@ -4,50 +4,39 @@ import cats.syntax.eq.catsSyntaxEq
 import co.uk.foodgen.payload
 import co.uk.foodgen.service.models.MealView
 import io.circe.generic.semiauto.deriveCodec
-import io.circe.syntax.EncoderOps
-import io.circe.{Codec, Decoder, Encoder, Json}
+import io.circe.{Codec, Decoder, Encoder}
 import io.scalaland.chimney.syntax.transformInto
 import sttp.tapir.Schema
 
+import java.time.LocalDate
+
 final case class MealDaysResponse(
-  monday: Option[MealResponse],
-  tuesday: Option[MealResponse],
-  wednesday: Option[MealResponse],
-  thursday: Option[MealResponse],
-  friday: Option[MealResponse],
-  saturday: Option[MealResponse],
-  sunday: Option[MealResponse]
+  monday: MealResponseWithDate,
+  tuesday: MealResponseWithDate,
+  wednesday: MealResponseWithDate,
+  thursday: MealResponseWithDate,
+  friday: MealResponseWithDate,
+  saturday: MealResponseWithDate,
+  sunday: MealResponseWithDate
 )
 
 object MealDaysResponse:
-  def apply(views: List[MealView], mealNumber: Int): MealDaysResponse =
+  // views is already grouped by meal number
+  def apply(views: List[MealView], dates: List[LocalDate], mealNumber: Int): MealDaysResponse =
     MealDaysResponse(
-      monday = buildMealResponse(views, mealNumber, 1),
-      tuesday = buildMealResponse(views, mealNumber, 2),
-      wednesday = buildMealResponse(views, mealNumber, 3),
-      thursday = buildMealResponse(views, mealNumber, 4),
-      friday = buildMealResponse(views, mealNumber, 5),
-      saturday = buildMealResponse(views, mealNumber, 6),
-      sunday = buildMealResponse(views, mealNumber, 7)
+      monday = buildMealWithDateResponse(views, dates.head, 1),
+      tuesday = buildMealWithDateResponse(views, dates(1), 2),
+      wednesday = buildMealWithDateResponse(views, dates(2), 3),
+      thursday = buildMealWithDateResponse(views, dates(3), 4),
+      friday = buildMealWithDateResponse(views, dates(4), 5),
+      saturday = buildMealWithDateResponse(views, dates(5), 6),
+      sunday = buildMealWithDateResponse(views, dates(6), 7)
     )
 
-  private def buildMealResponse(views: List[MealView], mealNumber: Int, dayOfWeekValue: Int): Option[MealResponse] =
+  private def buildMealWithDateResponse(views: List[MealView], date: LocalDate, dayOfWeekValue: Int): MealResponseWithDate =
     views
-      .find(mv => mv.date.getDayOfWeek.getValue === dayOfWeekValue && mv.mealNumber === mealNumber)
-      .map(_.transformInto[MealResponse])
+      .find(mv => mv.date.getDayOfWeek.getValue === dayOfWeekValue)
+      .fold(MealResponseWithDate.create(date, view = None))(mv => MealResponseWithDate.create(mv.date, view = Some(mv)))
 
-  given Codec[Option[MealResponse]] = Codec.from(
-    Decoder.instance { cursor =>
-      cursor.value.asObject match
-        case Some(obj) if obj.isEmpty => Right(None)
-        case _                        => cursor.as[MealResponse].map(Some(_))
-    },
-    Encoder.instance {
-      case Some(mealResponse) => mealResponse.asJson
-      case None               => Json.obj()
-    }
-  )
   given Codec[MealDaysResponse] = deriveCodec
-
-  given Schema[Option[MealResponse]] = Schema.schemaForOption[MealResponse].copy(isOptional = false)
   given Schema[MealDaysResponse] = Schema.derived

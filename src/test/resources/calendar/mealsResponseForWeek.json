@@ -1,53 +1,103 @@
 [
   {
     "monday": {
-      "mealId": 1,
-      "mealNumber": 1
+      "date": "2024-01-01",
+      "meal": {
+        "mealId": 1,
+        "mealNumber": 1
+      }
     },
     "tuesday": {
-      "mealId": 3,
-      "mealNumber": 1
+      "date": "2024-01-02",
+      "meal": {
+        "mealId": 3,
+        "mealNumber": 1
+      }
     },
     "wednesday": {
-      "mealId": 4,
-      "mealNumber": 1
+      "date": "2024-01-03",
+      "meal": {
+        "mealId": 4,
+        "mealNumber": 1
+      }
     },
     "thursday": {
-      "mealId": 5,
-      "mealNumber": 1
+      "date": "2024-01-04",
+      "meal": {
+        "mealId": 5,
+        "mealNumber": 1
+      }
     },
     "friday": {
-      "mealId": 6,
-      "mealNumber": 1
+      "date": "2024-01-05",
+      "meal": {
+        "mealId": 6,
+        "mealNumber": 1
+      }
     },
     "saturday": {
-      "mealId": 7,
-      "mealNumber": 1
+      "date": "2024-01-06",
+      "meal": {
+        "mealId": 7,
+        "mealNumber": 1
+      }
     },
     "sunday": {
-      "mealId": 8,
-      "mealNumber": 1
+      "date": "2024-01-07",
+      "meal": {
+        "mealId": 8,
+        "mealNumber": 1
+      }
     }
   },
   {
     "monday": {
-      "mealId": 2,
-      "mealNumber": 2
+      "date": "2024-01-01",
+      "meal": {
+        "mealId": 2,
+        "mealNumber": 2
+      }
     },
-    "tuesday": {},
-    "wednesday": {},
-    "thursday": {},
-    "friday": {},
-    "saturday": {},
-    "sunday": {}
+    "tuesday": {
+      "date": "2024-01-02"
+    },
+    "wednesday": {
+      "date": "2024-01-03"
+    },
+    "thursday": {
+      "date": "2024-01-04"
+    },
+    "friday": {
+      "date": "2024-01-05"
+    },
+    "saturday": {
+      "date": "2024-01-06"
+    },
+    "sunday": {
+      "date": "2024-01-07"
+    }
   },
   {
-    "monday": {},
-    "tuesday": {},
-    "wednesday": {},
-    "thursday": {},
-    "friday": {},
-    "saturday": {},
-    "sunday": {}
+    "monday": {
+      "date": "2024-01-01"
+    },
+    "tuesday": {
+      "date": "2024-01-02"
+    },
+    "wednesday": {
+      "date": "2024-01-03"
+    },
+    "thursday": {
+      "date": "2024-01-04"
+    },
+    "friday": {
+      "date": "2024-01-05"
+    },
+    "saturday": {
+      "date": "2024-01-06"
+    },
+    "sunday": {
+      "date": "2024-01-07"
+    }
   }
 ]

@@ -33,7 +33,7 @@ class CalendarEndpoints(transactor: Transactor[IO]) extends HttpEndpoint:
           period = period,
           userId = userId
         )
-        .map(_.transformInto[MealsResponse])
+        .map(MealsResponse(_, date))
     }
 
   private val createCalendarMeal = endpoint.post

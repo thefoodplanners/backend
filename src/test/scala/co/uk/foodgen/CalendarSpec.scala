@@ -60,7 +60,7 @@ object CalendarSpec extends IOSuite:
         actual = result.asJson
         expected <- ResourceFileReader.readJsonFile("calendar/mealsAppendCalendar.json")
         check = expect.eql(Created, response.status) and
-          expect.eql(expected, actual.removeJsonFields(Set("date", "day", "recipe")))
+          expect.eql(expected, actual.removeJsonFields(Set("day", "recipe")))
       yield check
   }
 
@@ -83,7 +83,7 @@ object CalendarSpec extends IOSuite:
         actual = result.asJson
         expected <- ResourceFileReader.readJsonFile("calendar/mealsAddCalendar.json")
         check = expect.eql(Created, response.status) and
-          expect.eql(expected, actual.removeJsonFields(Set("date", "day", "recipe")))
+          expect.eql(expected, actual.removeJsonFields(Set("day", "recipe")))
       yield check
   }
 
@@ -147,7 +147,7 @@ object CalendarSpec extends IOSuite:
         response <- router(request)
         result <- response.as[Json]
         expected <- ResourceFileReader.readJsonFile("calendar/mealsResponseForWeek.json")
-        check = expect.eql(expected, result.removeJsonFields(Set("date", "day", "recipe")))
+        check = expect.eql(expected, result.removeJsonFields(Set("day", "recipe")))
       yield check
   }
 

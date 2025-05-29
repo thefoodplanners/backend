@@ -8,13 +8,11 @@ import io.scalaland.chimney.Transformer
 import neotype.interop.circe.given
 import sttp.tapir.Schema
 
-import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 final case class MealResponse(
   mealId: Meal.Id,
   mealNumber: Int,
-  date: LocalDate,
   day: String,
   recipe: Recipe
 )
@@ -24,7 +22,6 @@ object MealResponse:
     MealResponse(
       mealId = view.id,
       mealNumber = view.mealNumber,
-      date = view.date,
       day = view.date.format(DateTimeFormatter.ofPattern("EEEE")),
       recipe = view.recipe
     )
