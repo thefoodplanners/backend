@@ -12,7 +12,6 @@ import java.time.format.DateTimeFormatter
 
 final case class MealResponse(
   mealId: Meal.Id,
-  mealNumber: Int,
   day: String,
   recipe: Recipe
 )
@@ -21,7 +20,6 @@ object MealResponse:
   given Transformer[MealView, MealResponse] = (view: MealView) =>
     MealResponse(
       mealId = view.id,
-      mealNumber = view.mealNumber,
       day = view.date.format(DateTimeFormatter.ofPattern("EEEE")),
       recipe = view.recipe
     )

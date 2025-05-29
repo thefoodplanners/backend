@@ -23,9 +23,10 @@ object MealsResponse:
       .asScala
       .toList
     val viewsByMealNumber = views.groupBy(_.mealNumber)
-    println(s"VIEWS: $viewsByMealNumber")
     val maxMealNumber = Math.max(views.map(_.mealNumber).maxOption.getOrElse(1), 3)
-    val meals = List.range(1, maxMealNumber + 1).map(mealNumber => MealDaysResponse(viewsByMealNumber.getOrElse(mealNumber, List.empty), dates, mealNumber))
+    val meals = List
+      .range(1, maxMealNumber + 1)
+      .map(mealNumber => MealDaysResponse(viewsByMealNumber.getOrElse(mealNumber, List.empty), dates, mealNumber))
     MealsResponse(meals)
 
   given Codec[MealsResponse] = Codec.from(

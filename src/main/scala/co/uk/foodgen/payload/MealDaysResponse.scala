@@ -11,32 +11,39 @@ import sttp.tapir.Schema
 import java.time.LocalDate
 
 final case class MealDaysResponse(
-  monday: MealResponseWithDate,
-  tuesday: MealResponseWithDate,
-  wednesday: MealResponseWithDate,
-  thursday: MealResponseWithDate,
-  friday: MealResponseWithDate,
-  saturday: MealResponseWithDate,
-  sunday: MealResponseWithDate
+  monday: MealResponseWithDateAndMealNumber,
+  tuesday: MealResponseWithDateAndMealNumber,
+  wednesday: MealResponseWithDateAndMealNumber,
+  thursday: MealResponseWithDateAndMealNumber,
+  friday: MealResponseWithDateAndMealNumber,
+  saturday: MealResponseWithDateAndMealNumber,
+  sunday: MealResponseWithDateAndMealNumber
 )
 
 object MealDaysResponse:
   // views is already grouped by meal number
   def apply(views: List[MealView], dates: List[LocalDate], mealNumber: Int): MealDaysResponse =
     MealDaysResponse(
-      monday = buildMealWithDateResponse(views, dates.head, 1),
-      tuesday = buildMealWithDateResponse(views, dates(1), 2),
-      wednesday = buildMealWithDateResponse(views, dates(2), 3),
-      thursday = buildMealWithDateResponse(views, dates(3), 4),
-      friday = buildMealWithDateResponse(views, dates(4), 5),
-      saturday = buildMealWithDateResponse(views, dates(5), 6),
-      sunday = buildMealWithDateResponse(views, dates(6), 7)
+      monday = buildMealWithDateResponse(views, dates.head, mealNumber, 1),
+      tuesday = buildMealWithDateResponse(views, dates(1), mealNumber, 2),
+      wednesday = buildMealWithDateResponse(views, dates(2), mealNumber, 3),
+      thursday = buildMealWithDateResponse(views, dates(3), mealNumber, 4),
+      friday = buildMealWithDateResponse(views, dates(4), mealNumber, 5),
+      saturday = buildMealWithDateResponse(views, dates(5), mealNumber, 6),
+      sunday = buildMealWithDateResponse(views, dates(6), mealNumber, 7)
     )
 
-  private def buildMealWithDateResponse(views: List[MealView], date: LocalDate, dayOfWeekValue: Int): MealResponseWithDate =
+  private def buildMealWithDateResponse(
+    views: List[MealView],
+    date: LocalDate,
+    mealNumber: Int,
+    dayOfWeekValue: Int
+  ): MealResponseWithDateAndMealNumber =
     views
       .find(mv => mv.date.getDayOfWeek.getValue === dayOfWeekValue)
-      .fold(MealResponseWithDate.create(date, view = None))(mv => MealResponseWithDate.create(mv.date, view = Some(mv)))
+      .fold(MealResponseWithDateAndMealNumber.create(date, mealNumber, view = None))(mv =>
+        MealResponseWithDateAndMealNumber.create(mv.date, mv.mealNumber, view = Some(mv))
+      )
 
   given Codec[MealDaysResponse] = deriveCodec
   given Schema[MealDaysResponse] = Schema.derived
