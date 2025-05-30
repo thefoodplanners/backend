@@ -37,7 +37,7 @@
       "date": "2024-01-01",
       "mealNumber": 2,
       "meal": {
-        "mealId": 4
+        "mealId": 2
       }
     },
     "tuesday": {
@@ -70,7 +70,7 @@
       "date": "2024-01-01",
       "mealNumber": 3,
       "meal": {
-        "mealId": 2
+        "mealId": 4
       }
     },
     "tuesday": {

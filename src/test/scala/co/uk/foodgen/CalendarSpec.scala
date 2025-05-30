@@ -72,9 +72,9 @@ object CalendarSpec extends IOSuite:
         userId <- decryptUserIdFromCookieOrFail(loginToken)
         mealId1 <- mealService.saveMeal(date, mealNumber = None, recipeId, userId)
         mealId2 <- mealService.saveMeal(date, mealNumber = None, recipeId, userId)
-        mealId3 <- mealService.saveMeal(date, mealNumber = None, recipeId, userId)
+        mealId3 <- mealService.saveMeal(date, mealNumber = Some(4), recipeId, userId)
 
-        resource = CreateMealRequest(date, mealNumber = Some(2), recipeId)
+        resource = CreateMealRequest(date, mealNumber = Some(3), recipeId)
         request = Request[IO](POST, Uri.unsafeFromString(calendarMealsUrl.asString))
           .withEntity(resource)
           .addCookie(loginToken)
@@ -278,8 +278,8 @@ object CalendarSpec extends IOSuite:
         result <- mealService.getAllMealsByPeriod(date, Period.Week, userId)
         expected = Set(
           (mealId1, 1, date),
-          (mealId3, 2, date),
-          (mealId4, 3, date)
+          (mealId3, 3, date),
+          (mealId4, 4, date)
         )
         check = expect.eql(NoContent, response.status) and
           expect.eql(3, result.length) and

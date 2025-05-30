@@ -22,7 +22,6 @@ final class MealService(using Transactor[IO]):
       fetchedMealNumber <- mealNumber.fold(
         MealsDao.selectLatestMealNumberFromMeal(date, userId)
       )(_.pure[ConnectionIO])
-      _ <- MealsDao.syncMealNumbers(userId, date, fetchedMealNumber, false)
       mealId <- MealsDao.insertMeal(date, fetchedMealNumber, recipeId, userId)
     yield mealId).tx
 
@@ -33,7 +32,6 @@ final class MealService(using Transactor[IO]):
     (for
       meal <- MealsDao.selectMeal(mealId, userId)
       _ <- MealsDao.deleteMeal(mealId, userId)
-      _ <- MealsDao.syncMealNumbers(meal.userId, meal.date, meal.mealNumber, isDeletion = true)
     yield ()).tx
 
   def moveMeal(mealId: Meal.Id, newDate: LocalDate, newMealNumber: Int, userId: User.Id): IO[Unit] =
