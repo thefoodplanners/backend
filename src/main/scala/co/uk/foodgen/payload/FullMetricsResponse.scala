@@ -9,15 +9,17 @@ import sttp.tapir.Schema
 
 final case class FullMetricsResponse(
   label: String,
-  metrics: List[MetricsResponse]
+  metrics: MetricsResponse
 )
 
 object FullMetricsResponse:
   given Transformer[FullMetricsView, FullMetricsResponse] = (view: FullMetricsView) =>
     FullMetricsResponse(
       label = view.label,
-      metrics = view.metrics.map(_.transformInto[MetricsResponse])
+      metrics = view.metrics.transformInto[MetricsResponse]
     )
 
   given Codec[FullMetricsResponse] = deriveCodec
-  given Schema[FullMetricsResponse] = Schema.derived[FullMetricsResponse].modify(_.metrics)(_.copy(isOptional = false))
+  given Schema[FullMetricsResponse] = Schema
+    .derived[FullMetricsResponse]
+    .modify(_.metrics)(_.copy(isOptional = false))

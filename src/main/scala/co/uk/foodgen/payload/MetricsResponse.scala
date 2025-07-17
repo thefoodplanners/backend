@@ -7,22 +7,30 @@ import io.scalaland.chimney.Transformer
 import sttp.tapir.Schema
 
 final case class MetricsResponse(
-  label: String,
-  totalCalories: Int,
-  totalCarbohydrates: Float,
-  totalProteins: Float,
-  totalFats: Float
+  labels: List[String],
+  calories: List[Int],
+  carbohydrates: List[Float],
+  proteins: List[Float],
+  fats: List[Float]
 )
 
 object MetricsResponse:
-  given Transformer[MetricView, MetricsResponse] = (view: MetricView) =>
+  given Transformer[List[MetricView], MetricsResponse] = (views: List[MetricView]) =>
     MetricsResponse(
-      label = view.label,
-      totalCalories = view.totalCalories,
-      totalCarbohydrates = view.totalCarbohydrates,
-      totalProteins = view.totalProteins,
-      totalFats = view.totalFats
+      labels = views.map(_.label),
+      calories = views.map(_.totalCalories),
+      carbohydrates = views.map(_.totalCarbohydrates),
+      proteins = views.map(_.totalProteins),
+      fats = views.map(_.totalFats)
     )
 
   given Codec[MetricsResponse] = deriveCodec
-  given Schema[MetricsResponse] = Schema.derived
+  given Schema[MetricsResponse] = Schema
+    .derived[MetricsResponse]
+    .modify(_.labels)(_.copy(isOptional = false))
+    .modify(_.calories)(_.copy(isOptional = false))
+    .modify(_.carbohydrates)(_.copy(isOptional = false))
+    .modify(_.proteins)(_.copy(isOptional = false))
+    .modify(_.fats)(_.copy(isOptional = false))
+
+end MetricsResponse

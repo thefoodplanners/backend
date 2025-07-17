@@ -60,10 +60,12 @@ object ProgressChartSpec extends IOSuite:
         result <- response.as[FullMetricsResponse]
         expected = FullMetricsResponse(
           label = "Monday",
-          metrics = List(
-            MetricsResponse("Meal 1", 100, 10f, 10f, 10f),
-            MetricsResponse("Meal 2", 200, 20f, 20f, 20f),
-            MetricsResponse("Meal 3", 300, 30f, 30f, 30f)
+          metrics = MetricsResponse(
+            List("Meal 1", "Meal 2", "Meal 3"),
+            List(100, 200, 300),
+            List(10f, 20f, 30f),
+            List(10f, 20f, 30f),
+            List(10f, 20f, 30f)
           )
         )
         check = expect.eql(Ok, response.status) and
@@ -109,10 +111,12 @@ object ProgressChartSpec extends IOSuite:
         result <- response.as[FullMetricsResponse]
         expected = FullMetricsResponse(
           label = "Jan 1-7",
-          metrics = List(
-            MetricsResponse("Mon", 100, 10f, 10f, 10f),
-            MetricsResponse("Tue", 300, 30f, 30f, 30f),
-            MetricsResponse("Wed", 600, 60f, 60f, 60f)
+          metrics = MetricsResponse(
+            List("Mon", "Tue", "Wed"),
+            List(100, 300, 600),
+            List(10f, 30f, 60f),
+            List(10f, 30f, 60f),
+            List(10f, 30f, 60f)
           )
         )
         check = expect.eql(Ok, response.status) and
@@ -158,10 +162,12 @@ object ProgressChartSpec extends IOSuite:
         result <- response.as[FullMetricsResponse]
         expected = FullMetricsResponse(
           label = "January",
-          metrics = List(
-            MetricsResponse("Jan 1-7", 100, 10f, 10f, 10f),
-            MetricsResponse("Jan 8-14", 300, 30f, 30f, 30f),
-            MetricsResponse("Jan 15-21", 600, 60f, 60f, 60f)
+          metrics = MetricsResponse(
+            List("Jan 1-7", "Jan 8-14", "Jan 15-21"),
+            List(100, 300, 600),
+            List(10f, 30f, 60f),
+            List(10f, 30f, 60f),
+            List(10f, 30f, 60f)
           )
         )
         check = expect.eql(Ok, response.status) and
@@ -207,10 +213,12 @@ object ProgressChartSpec extends IOSuite:
         result <- response.as[FullMetricsResponse]
         expected = FullMetricsResponse(
           label = "2024",
-          metrics = List(
-            MetricsResponse("Jan", 100, 10f, 10f, 10f),
-            MetricsResponse("Feb", 300, 30f, 30f, 30f),
-            MetricsResponse("Mar", 600, 60f, 60f, 60f)
+          metrics = MetricsResponse(
+            List("Jan", "Feb", "Mar"),
+            List(100, 300, 600),
+            List(10f, 30f, 60f),
+            List(10f, 30f, 60f),
+            List(10f, 30f, 60f)
           )
         )
         check = expect.eql(Ok, response.status) and
