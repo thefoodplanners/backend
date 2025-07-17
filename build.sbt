@@ -1,13 +1,13 @@
 // https://github.com/http4s/http4s/security/advisories/GHSA-52cf-226f-rhr6
 val Http4sVersion = "0.23.2"
-val TapirVersion = "1.11.14"
+val TapirVersion = "1.11.37"
 // Updating circe version will break tapir-swagger-ui-bundle
 val CirceVersion = "0.14.10"
-val NeoTypeVersion = "0.3.15"
-val DoobieVersion = "1.0.0-RC7"
+val NeoTypeVersion = "0.3.25"
+val DoobieVersion = "1.0.0-RC10"
 val TSecVersion = "0.5.0"
-val TestContainersVersion = "0.41.8"
-val LogbackVersion = "1.5.16"
+val TestContainersVersion = "0.43.0"
+val LogbackVersion = "1.5.18"
 
 lazy val root = (project in file("."))
   .settings(
@@ -30,7 +30,7 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
       "org.tpolecat" %% "doobie-hikari" % DoobieVersion,
-      "io.scalaland" %% "chimney" % "1.7.3",
+      "io.scalaland" %% "chimney" % "1.8.2",
       "io.github.jmcardon" %% "tsec-mac" % TSecVersion,
       "io.github.jmcardon" %% "tsec-signatures" % TSecVersion,
       "io.github.jmcardon" %% "tsec-http4s" % TSecVersion,
