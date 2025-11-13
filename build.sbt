@@ -1,13 +1,7 @@
-// https://github.com/http4s/http4s/security/advisories/GHSA-52cf-226f-rhr6
-val Http4sVersion = "0.23.2"
-val TapirVersion = "1.11.37"
-// Updating circe version will break tapir-swagger-ui-bundle
-val CirceVersion = "0.14.10"
-val NeoTypeVersion = "0.3.25"
-val DoobieVersion = "1.0.0-RC10"
-val TSecVersion = "0.5.0"
-val TestContainersVersion = "0.43.0"
-val LogbackVersion = "1.5.18"
+val QuillVersion = "4.8.6"
+val QuillBaseVersion = "4.8.5"
+val TestContainersVersion = "0.43.6"
+val LogbackVersion = "1.5.20"
 
 lazy val root = (project in file("."))
   .settings(
@@ -16,36 +10,29 @@ lazy val root = (project in file("."))
     version := "1.0.0",
     scalaVersion := "3.3.3",
     libraryDependencies ++= Seq(
-      "org.http4s" %% "http4s-ember-server" % Http4sVersion,
-      "org.http4s" %% "http4s-circe" % Http4sVersion,
-      "org.http4s" %% "http4s-dsl" % Http4sVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-core" % TapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % TapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % TapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % TapirVersion,
-      "io.circe" %% "circe-generic" % CirceVersion,
-      "io.circe" %% "circe-parser" % CirceVersion,
-      "io.github.kitlangton" %% "neotype" % NeoTypeVersion,
-      "io.github.kitlangton" %% "neotype-circe" % NeoTypeVersion,
-      "org.tpolecat" %% "doobie-core" % DoobieVersion,
-      "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
-      "org.tpolecat" %% "doobie-hikari" % DoobieVersion,
-      "io.scalaland" %% "chimney" % "1.8.2",
-      "io.github.jmcardon" %% "tsec-mac" % TSecVersion,
-      "io.github.jmcardon" %% "tsec-signatures" % TSecVersion,
-      "io.github.jmcardon" %% "tsec-http4s" % TSecVersion,
-      "com.disneystreaming" %% "weaver-cats" % "0.8.4" % Test,
+      "dev.zio" %% "zio" % "2.1.22",
+      "dev.zio" %% "zio-http" % "3.5.1",
+      "dev.zio" %% "zio-schema" % "1.7.5",
+      "dev.zio" %% "zio-schema-json" % "1.7.5",
+      "dev.zio" %% "zio-json" % "0.7.45",
+      "dev.zio" %% "zio-prelude" % "1.0.0-RC42",
+      "de.mkammerer" % "argon2-jvm" % "2.12",
+      "com.github.jwt-scala" %% "jwt-zio-json" % "11.0.3",
+      "io.getquill" %% "quill-jdbc-zio" % QuillVersion,
+
+      "org.postgresql" % "postgresql" % "42.7.8",
+      "dev.zio" %% "zio-test" % "2.1.22" % Test,
+
       "com.dimafeng" %% "testcontainers-scala" % TestContainersVersion % Test,
       "com.dimafeng" %% "testcontainers-scala-postgresql" % TestContainersVersion % Test,
       "ch.qos.logback" % "logback-classic" % LogbackVersion % Runtime,
     ),
-    testFrameworks += new TestFramework("weaver.framework.CatsEffect"),
     assembly / assemblyMergeStrategy := {
+      case PathList("io", "getquill", _*) => MergeStrategy.first
       case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") =>
         MergeStrategy.singleOrError
       case PathList("META-INF", "resources", "webjars", "swagger-ui", _*) =>
         MergeStrategy.singleOrError
-      case PathList("META-INF", x, _*) if x.toLowerCase == "services" => MergeStrategy.filterDistinctLines
       case "module-info.class" | PathList("META-INF", _*) => MergeStrategy.discard
       case x                       => (assembly / assemblyMergeStrategy).value.apply(x)
     },

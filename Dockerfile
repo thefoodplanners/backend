@@ -1,5 +1,5 @@
 # Use an official OpenJDK runtime as a parent image
-FROM openjdk:11-jdk-slim AS builder
+FROM eclipse-temurin:21-jdk AS builder
 
 ARG SBT_VERSION=1.10.1
 
@@ -17,19 +17,20 @@ RUN apt update && \
 
 # Copy the build.sbt and project/ directory
 COPY build.sbt .
+COPY .jvmopts .
 COPY project/ project/
 
 # Download dependencies
 RUN sbt update
 
 # Copy the rest of the application code
-COPY src/ src/
+COPY src/main src/main
 
 # Build the application
 RUN sbt assembly
 
 # Use a smaller base image for the final stage
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:21-jre
 
 # Set the working directory
 WORKDIR /app

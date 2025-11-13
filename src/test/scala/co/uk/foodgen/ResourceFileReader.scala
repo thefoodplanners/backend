@@ -1,20 +1,31 @@
 package co.uk.foodgen
 
-import cats.effect.IO
-import fs2.io.readInputStream
-import fs2.text
-import io.circe.{Json, parser}
+import co.uk.foodgen.api.toResponseError
+import zio.ZIO
+import zio.json.DecoderOps
+import zio.json.ast.Json
+
+import scala.io.Source
 
 object ResourceFileReader:
+  private def readFile(fileName: String) =
+    ZIO.acquireRelease(
+      ZIO.attemptBlocking(Source.fromResource(fileName))
+    )(bs => ZIO.succeed(bs.close()))
 
-  def readFile(fileName: String): IO[String] =
-    val stream = IO.blocking(Option(getClass.getClassLoader.getResourceAsStream(fileName)).get)
-    readInputStream(stream, 4096)
-      .through(text.utf8.decode)
-      .compile
-      .string
-
-  def readJsonFile(fileName: String): IO[Json] =
-    readFile(fileName).map(parser.parse(_).fold(fail => throw fail.underlying, identity))
-
+  def readJsonFile(fileName: String) = ZIO.scoped(
+    readFile(fileName)
+      .flatMap(contents =>
+        ZIO
+          .fromEither(
+            contents
+              .getLines()
+              .toList
+              .mkString(" ")
+              .fromJson[Json]
+          )
+          .mapError(Exception(_))
+      )
+      .toResponseError
+  )
 end ResourceFileReader

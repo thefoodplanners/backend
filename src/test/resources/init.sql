@@ -1,36 +1,23 @@
-CREATE TYPE "meal_type" AS ENUM (
-  'breakfast',
-  'lunch',
-  'dinner'
-);
-
-CREATE TYPE "diet" AS ENUM (
-  'vegan',
-  'vegetarian',
-  'halal',
-  'kosher'
-);
-
 CREATE TABLE "users" (
   "id" SERIAL PRIMARY KEY,
   "email" varchar NOT NULL,
   "username" varchar UNIQUE NOT NULL,
   "password" varchar NOT NULL,
   "target_calories" integer,
-  "dietary_requirements" diet[] NOT NULL
+  "dietary_requirements" text[] NOT NULL
 );
 
 CREATE TABLE "recipes" (
   "id" SERIAL PRIMARY KEY,
   "name" varchar NOT NULL,
-  "meal_type" meal_type NOT NULL,
+  "meal_type" varchar NOT NULL,
   "description" text,
   "image_url" varchar,
   "calories" integer NOT NULL,
   "carbohydrates" float NOT NULL,
   "proteins" float NOT NULL,
   "fats" float NOT NULL,
-  "dietary_requirements" diet[] NOT NULL
+  "dietary_requirements" text[] NOT NULL
 );
 
 CREATE TABLE "meals" (

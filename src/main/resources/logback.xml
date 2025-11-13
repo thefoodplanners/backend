@@ -7,9 +7,12 @@
          support ANSI color codes by default. -->
     <withJansi>false</withJansi>
     <encoder>
-      <pattern>[%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg %n</pattern>
+      <pattern>[%thread] %highlight(%-5level) %cyan(%logger{199}) - %msg%n</pattern>
     </encoder>
   </appender>
+  <logger name="org.testcontainers" level="OFF"/>
+  <logger name="tc.testcontainers/ryuk:0.9.0" level="OFF"/>
+  <logger name="tc.postgres:latest" level="OFF"/>
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>

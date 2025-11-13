@@ -1,74 +1,72 @@
 package co.uk
 
-import cats.effect.{IO, Resource}
-import co.uk.foodgen.Server.setTransactor
-import co.uk.foodgen.endpoints.Authentication
-import co.uk.foodgen.models.User
-import com.dimafeng.testcontainers.{Container, PostgreSQLContainer}
-import doobie.syntax.connectionio.toConnectionIOOps
-import doobie.util.fragment.Fragment
-import doobie.util.transactor.Transactor
-import io.circe.Json
-import org.http4s.Method.GET
-import org.http4s.{Request, RequestCookie, Uri}
+import com.dimafeng.testcontainers.{Container, JdbcDatabaseContainer, PostgreSQLContainer}
+import com.zaxxer.hikari.HikariDataSource
+import io.getquill.*
 import org.testcontainers.utility.DockerImageName
-import weaver.{Expectations, TestName}
+import zio.http.Response
+import zio.json.ast.Json
+import zio.json.ast.Json.*
+import zio.prelude.Equal
+import zio.{ZIO, ZLayer}
 
+import java.time.LocalDate
+import javax.sql.DataSource
 import scala.io.Source
 
 package object foodgen:
+  val httpApp = ServerConfig.httpApp
+
+  type IOR[A] = ZIO[DataSource, Response, A]
+
   private val containerDef = PostgreSQLContainer.Def(
     dockerImageName = DockerImageName.parse("postgres:latest")
   )
 
-  def containerResource[C <: Container](container: IO[C]): Resource[IO, C] =
-    Resource.make(container.flatTap { container =>
-      IO.blocking(container.start())
-    })(c => IO.blocking(c.stop()))
+  private def startContainer[C <: Container](container: C) = ZIO.attemptBlocking(container.start())
+  private def releaseContainer[C <: Container](container: C) = ZIO.attemptBlocking(container.close()).ignore
 
-  def testWithDb[A](
-    app: Transactor[IO] => A
-  )(test: TestName => IO[Expectations] => Unit)(name: TestName)(
-    testLogic: A => IO[Expectations]
-  ): Unit =
-    val txRes =
-      for
-        container <- containerResource(IO.pure(containerDef.createContainer()))
-        transactor <- setTransactor(
-          container.driverClassName,
-          container.jdbcUrl,
-          container.username,
-          container.password
-        )
-        _ <- initDb(transactor)
-      yield transactor
+  private def containerResource =
+    val container = containerDef.createContainer()
+    ZIO.acquireRelease(startContainer(container))(_ => releaseContainer(container)).map(_ => container)
 
-    test(name)(txRes.use(app andThen testLogic))
+  private def dataSourceTest(container: JdbcDatabaseContainer): DataSource =
+    val ds = new HikariDataSource()
+    ds.setDriverClassName(container.driverClassName)
+    ds.setJdbcUrl(container.jdbcUrl)
+    ds.setUsername(container.username)
+    ds.setPassword(container.password)
+    ds
 
-  def initDb(transactor: Transactor[IO]): Resource[IO, Unit] =
+  private def initDbTables(dataSource: DataSource) =
+    (for
+      source <- ZIO.fromAutoCloseable(ZIO.attempt(Source.fromResource("init.sql")))
+      query = source.getLines().mkString(" ")
+      ctx = new PostgresZioJdbcContext(SnakeCase)
+      quillQuery = quote { sql"#$query".as[Action[Int]] }
+      _ <- ctx.run(quillQuery)
+    yield ()).provideSomeLayer(ZLayer.succeed(dataSource))
+
+  def setupDbLayer = ZLayer.fromZIO {
     for
-      source <- Resource.fromAutoCloseable(IO(Source.fromResource("init.sql")))
-      query = Fragment.const0(source.getLines().mkString(" "))
-      _ <- Resource.eval(query.update.run.transact(transactor))
-    yield ()
+      container <- containerResource
+      dataSource = dataSourceTest(container)
+      _ <- initDbTables(dataSource)
+    yield dataSource
+  }
 
-  def decryptUserIdFromCookieOrFail(cookie: RequestCookie): IO[User.Id] =
-    val dummyRequest = Request[IO](GET, Uri.unsafeFromString("/dummy")).addCookie(cookie)
-    Authentication.handler.authenticator
-      .extractAndValidate(dummyRequest)
-      .map(_.identity)
-      .value
-      .map(_.get)
+  given CanEqual[Json, Json] = CanEqual.derived
+  given Equal[LocalDate] = Equal.make(_.isEqual(_))
 
   extension (json: Json)
-    def removeJsonFields(fieldsToRemove: Set[String]): Json =
-      json.fold(
-        json,
-        _ => json,
-        _ => json,
-        _ => json,
-        arr => Json.fromValues(arr.map(_.removeJsonFields(fieldsToRemove))),
-        obj => obj.filterKeys(!fieldsToRemove.contains(_)).mapValues(_.removeJsonFields(fieldsToRemove)).toJson
-      )
-
+    def removeFields(names: String*): Json =
+      json match
+        case Json.Obj(fields) =>
+          val filtered = fields.collect {
+            case (k, v) if !names.contains(k) => k -> v.removeFields(names*)
+          }
+          Json.Obj(filtered)
+        case Json.Arr(values) =>
+          Json.Arr(values.map(_.removeFields(names*)))
+        case other => other
 end foodgen

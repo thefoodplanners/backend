@@ -1,7 +1,11 @@
 project/project
 project/target
+project/metals.sbt
+project/.bloop
 target
+.bloop
 .idea
 .bsp
+.metals
 *.class
 *.log
